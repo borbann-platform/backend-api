@@ -1,27 +1,56 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2017", // Keep target
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
+    "strict": true, // Keep strict mode
+    "noEmit": true, // Next.js handles emitting
     "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    "module": "esnext", // Use esnext module system
+    "moduleResolution": "bundler", // Recommended for modern TS/JS
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "preserve", // Let Next.js handle JSX transform
     "incremental": true,
     "plugins": [
       {
         "name": "next"
       }
     ],
+    // Ensure path aliases cover the new structure
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"], // Base alias
+      "@/components/*": ["./components/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/hooks/*": ["./hooks/*"],
+      "@/features/*": ["./features/*"],
+      "@/types/*": ["./types/*"],
+      "@/services/*": ["./services/*"],
+      "@/store/*": ["./store/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  // Update include paths
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    // Add specific includes if needed, but '**/*.ts/tsx' usually covers it
+    // "features/**/*.ts",
+    // "features/**/*.tsx",
+    // "components/**/*.ts",
+    // "components/**/*.tsx",
+    // "lib/**/*.ts",
+    // "hooks/**/*.ts",
+    // "types/**/*.ts",
+    // "services/**/*.ts",
+    // "store/**/*.ts",
+    "eslint.config.mjs", // Include modern ESLint config
+    "postcss.config.mjs" // Include modern PostCSS config
+  ],
+  "exclude": [
+    "node_modules"
+    // Add other excludes if necessary
+  ]
 }
