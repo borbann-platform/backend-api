@@ -167,6 +167,117 @@ pnpm test
 
 _(Add specific test commands if using Jest, Cypress, etc.)_
 
+## Environment Setup
+
+_(Keep existing instructions, ensure `.env.example` is mentioned)_
+
+## Setup Instructions (Using uv)
+
+`uv` is a fast Python package installer and resolver, usable as a drop-in replacement for `pip` and `venv`.
+
+1.  **Install `uv`:** (If not already installed)
+
+    ```bash
+    # Using pipx (recommended)
+    pipx install uv
+    # Or using pip
+    pip install uv
+    ```
+
+2.  **Backend Setup (using uv):**
+
+    ```bash
+    # Navigate to the backend directory
+    cd backend
+
+    # Create virtual environment (uv handles this implicitly often,
+    # but explicit creation is good practice for clarity)
+    uv venv .venv
+    # Activate it
+    # Windows: .\.venv\Scripts\activate
+    # macOS/Linux: source .venv/bin/activate
+
+    # Install dependencies from pyproject.toml (includes editable install)
+    uv pip install -e .
+
+    # Install development dependencies (if defined in pyproject.toml under [project.optional-dependencies])
+    # Example: uv pip install -e .[dev]
+
+    # Initialize/Upgrade Database (using Alembic)
+    # Ensure DB service is running (e.g., via docker-compose up db)
+    # Initialize Alembic (only once per project):
+    # alembic init alembic
+    # Configure alembic.ini and alembic/env.py (see Alembic docs)
+
+    # Generate a new migration script based on model changes:
+    # alembic revision --autogenerate -m "Describe your change here"
+
+    # Apply migrations to the database:
+    alembic upgrade head
+    ```
+
+3.  **Frontend Setup:**
+    _(Keep existing `pnpm install` instructions)_
+
+## Running the Application (using uv)
+
+1.  **Start Docker Services (DB, Redis):**
+
+    ```bash
+    # From the 'backend' directory
+    docker-compose up -d db redis
+    ```
+
+2.  **Activate Backend Environment:**
+
+    ```bash
+    # From the 'backend' directory
+    # Windows: .\.venv\Scripts\activate
+    # macOS/Linux: source .venv/bin/activate
+    ```
+
+3.  **Run Backend API (using uv):**
+
+    ```bash
+    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    # Or run via uv directly (less common for servers, more for scripts):
+    # uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    ```
+
+4.  **Run Celery Worker (using uv):**
+
+    ```bash
+    celery -A app.workers.celery_app worker --loglevel=info
+    # Or via uv:
+    # uv run celery -A app.workers.celery_app worker --loglevel=info
+    ```
+
+5.  **Run Celery Beat (using uv, if needed):**
+
+    ```bash
+    celery -A app.workers.celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler # Or without scheduler
+    # Or via uv:
+    # uv run celery -A app.workers.celery_app beat --loglevel=info --scheduler ...
+    ```
+
+6.  **Run Frontend:**
+    _(Keep existing `pnpm dev` instructions)_
+
+## Testing (using uv)
+
+````bash
+# Navigate to the backend directory
+cd backend
+
+# Activate environment
+# Windows: .\.venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+
+# Run tests using uv (finds pytest if installed)
+uv run pytest
+# Or explicitly:
+# pytest
+
 ## Linting and Formatting
 
 ### Backend
@@ -182,7 +293,7 @@ black .
 ruff check .
 # Fix linting/imports where possible
 ruff check . --fix
-```
+````
 
 ### Frontend
 
