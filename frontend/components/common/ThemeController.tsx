@@ -72,7 +72,7 @@ export function ThemeController({ children, defaultColorScheme = "Blue" }: Theme
       {children}
 
       {/* Theme Controller UI */}
-      <div className="fixed bottom-4 left-4 z-[999] flex items-center gap-2">
+      <div className="fixed bottom-4 left-4 z-999 flex items-center gap-2">
         {" "}
         {/* Ensure high z-index */}
         <TooltipProvider>
@@ -83,7 +83,7 @@ export function ThemeController({ children, defaultColorScheme = "Blue" }: Theme
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm shadow-md">
+                    className="h-10 w-10 rounded-full bg-background/90 backdrop-blur-xs shadow-md">
                     <Palette className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>

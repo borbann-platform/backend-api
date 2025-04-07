@@ -50,7 +50,7 @@ export function OverlayDock({ position = "bottom", className }: OverlayDockProps
                 <Button
                   variant={overlay.isOpen && !overlay.isMinimized ? "default" : "outline"} // Highlight if open and not minimized
                   size="icon"
-                  className="h-10 w-10 rounded-full bg-background/90 backdrop-blur-sm shadow-md"
+                  className="h-10 w-10 rounded-full bg-background/90 backdrop-blur-xs shadow-md"
                   onClick={() => toggleOverlay(overlay.id)}>
                   {overlay.icon}
                 </Button>

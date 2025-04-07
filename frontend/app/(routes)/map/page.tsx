@@ -48,7 +48,7 @@ export default function MapPage() {
 
           {/* Prediction model banner */}
           <div className="absolute left-1/2 top-4 -translate-x-1/2 z-10">
-            <div className="flex items-center gap-2 rounded-lg bg-card/95 backdrop-blur-sm border border-border/50 px-4 py-2 shadow-lg">
+            <div className="flex items-center gap-2 rounded-lg bg-card/95 backdrop-blur-xs border border-border/50 px-4 py-2 shadow-lg">
               <div>
                 <h3 className="font-medium">Price Prediction: 15,000,000 ฿</h3>
                 <p className="text-xs text-muted-foreground">Based on our AI model analysis</p>

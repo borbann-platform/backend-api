@@ -63,7 +63,7 @@ export function MapSidebar() {
             B
           </div>
           {/* Hide text when collapsed */}
-          <span className="text-xl font-bold group-data-[collapsed]:hidden">BorBann</span>
+          <span className="text-xl font-bold group-data-collapsed:hidden">BorBann</span>
         </Link>
       </SidebarHeader>
 
@@ -81,7 +81,7 @@ export function MapSidebar() {
                 <Link href={item.href}>
                   <item.icon />
                   {/* Hide text when collapsed */}
-                  <span className="group-data-[collapsed]:hidden">{item.name}</span>
+                  <span className="group-data-collapsed:hidden">{item.name}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -110,7 +110,7 @@ export function MapSidebar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs">
             GG
           </div>
-          <div className="group-data-[collapsed]:hidden">
+          <div className="group-data-collapsed:hidden">
             <div className="font-medium text-sm">GG_WPX</div>
             <div className="text-xs text-muted-foreground">gg@example.com</div>
           </div>

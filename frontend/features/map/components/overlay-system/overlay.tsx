@@ -176,7 +176,7 @@ export function Overlay({
     >
       <Card
         className={cn(
-          "shadow-lg bg-card/95 backdrop-blur-sm border border-border/50 overflow-hidden flex flex-col", // Added flex flex-col
+          "shadow-lg bg-card/95 backdrop-blur-xs border border-border/50 overflow-hidden flex flex-col", // Added flex flex-col
           className
         )}
         style={{
@@ -187,7 +187,7 @@ export function Overlay({
         }}>
         {/* Make header draggable */}
         <CardHeader
-          className="pb-2 flex flex-row items-center justify-between cursor-move flex-shrink-0" // Added flex-shrink-0
+          className="pb-2 flex flex-row items-center justify-between cursor-move shrink-0" // Added shrink-0
           //   onMouseDown={handleHeaderMouseDown} // Uncomment if implementing dragging
         >
           <CardTitle id={`${id}-title`} className="text-sm font-medium flex items-center gap-2">

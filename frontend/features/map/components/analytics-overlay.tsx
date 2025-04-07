@@ -32,7 +32,7 @@ export function AnalyticsOverlay() {
             <p className="text-xs text-muted-foreground">Information in radius will be analyzed</p>
 
             {/* Area Price History Card */}
-            <Card className="bg-card/50 border border-border/50 shadow-sm">
+            <Card className="bg-card/50 border border-border/50 shadow-xs">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <LineChart className="h-4 w-4 text-primary" />
@@ -52,7 +52,7 @@ export function AnalyticsOverlay() {
             </Card>
 
             {/* Price Prediction Card */}
-            <Card className="bg-card/50 border border-border/50 shadow-sm">
+            <Card className="bg-card/50 border border-border/50 shadow-xs">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <LineChart className="h-4 w-4 text-primary" />
@@ -73,7 +73,7 @@ export function AnalyticsOverlay() {
 
             {/* Environmental Factors Cards */}
             <div className="grid grid-cols-2 gap-4">
-              <Card className="bg-card/50 border border-border/50 shadow-sm">
+              <Card className="bg-card/50 border border-border/50 shadow-xs">
                 <CardHeader className="p-4">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Droplets className="h-4 w-4 text-blue-500" />
@@ -86,7 +86,7 @@ export function AnalyticsOverlay() {
                 </CardHeader>
               </Card>
 
-              <Card className="bg-card/50 border border-border/50 shadow-sm">
+              <Card className="bg-card/50 border border-border/50 shadow-xs">
                 <CardHeader className="p-4">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Wind className="h-4 w-4 text-purple-500" />
@@ -102,7 +102,7 @@ export function AnalyticsOverlay() {
 
             {/* Chat With AI Card */}
             <Card
-              className="bg-card/50 border border-border/50 shadow-sm cursor-pointer hover:bg-muted/50 transition-colors"
+              className="bg-card/50 border border-border/50 shadow-xs cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={handleChatClick}>
               <CardHeader className="p-4">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">

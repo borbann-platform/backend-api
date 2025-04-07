@@ -144,7 +144,7 @@ export default function ModelExplanationPage() {
       {" "}
       {/* Adjusted for page content */}
       {/* Header */}
-      <header className="flex h-14 items-center justify-between border-b px-4 bg-background flex-shrink-0">
+      <header className="flex h-14 items-center justify-between border-b px-4 bg-background shrink-0">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Link href="/map" className="hover:text-foreground">
             Map
@@ -632,7 +632,7 @@ function Step5Content({
 function InfoCard({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description: string }) {
   return (
     <div className="flex items-start gap-3 rounded-lg border p-3">
-      <Icon className="mt-0.5 h-5 w-5 text-primary flex-shrink-0" />
+      <Icon className="mt-0.5 h-5 w-5 text-primary shrink-0" />
       <div>
         <h4 className="font-medium text-sm">{title}</h4>
         <p className="text-xs text-muted-foreground">{description}</p>
@@ -675,7 +675,7 @@ function FactorCard({
 function ProximityItem({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border p-2 text-xs">
-      <Icon className="h-4 w-4 text-primary flex-shrink-0" />
+      <Icon className="h-4 w-4 text-primary shrink-0" />
       <div>{text}</div>
     </div>
   );

@@ -13,7 +13,7 @@ import { ThemeToggle } from "@/components/common/ThemeToggle"; // Import from co
 export function MapHeader() {
   // Add any map-specific header logic here if needed
   return (
-    <header className="flex h-14 items-center justify-between border-b px-4 bg-background flex-shrink-0">
+    <header className="flex h-14 items-center justify-between border-b px-4 bg-background shrink-0">
       {/* Breadcrumbs or Title */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/tools" className="hover:text-foreground">
