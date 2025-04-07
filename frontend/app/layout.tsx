@@ -1,22 +1,19 @@
-/*
-========================================
-File: frontend/app/layout.tsx
-========================================
-*/
+import type React from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google"; // Example using Inter font
+import { Poppins } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/common/ThemeProvider"; // Correct path
-import { ThemeController } from "@/components/common/ThemeController"; // Correct path
-import { Toaster as SonnerToaster } from "@/components/ui/sonner"; // Sonner for notifications
-import { Toaster as RadixToaster } from "@/components/ui/toaster"; // Shadcn Toaster (if using useToast hook)
+import { ThemeProvider } from "@/components/theme-provider";
+import Sidebar from "@/components/sidebar";
 
-// Setup font
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" }); // Define CSS variable
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+});
 
 export const metadata: Metadata = {
-  title: "Borbann - Data Platform", // More specific title
-  description: "Data integration, analysis, and visualization platform.",
+  title: "BorBann - Property Analytics",
+  description: "Automated data integration pipeline and property analytics for real estate",
 };
 
 export default function RootLayout({
@@ -26,19 +23,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {" "}
-      {/* suppressHydrationWarning needed for next-themes */}
-      <body className={`${inter.variable} font-sans`}>
-        {" "}
-        {/* Apply font class */}
-        {/* ThemeProvider should wrap everything for theme context */}
+      <body className={poppins.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {/* ThemeController can wrap specific parts or the whole app */}
-          {/* If placed here, it controls the base theme and color scheme */}
-          <ThemeController defaultColorScheme="Blue">{children}</ThemeController>
-          {/* Include Toaster components for notifications */}
-          <SonnerToaster />
-          <RadixToaster /> {/* Include if using the useToast hook */}
+          <div className="flex h-screen">
+            <Sidebar />
+            <div className="flex-1 overflow-auto">{children}</div>
+          </div>
         </ThemeProvider>
       </body>
     </html>
