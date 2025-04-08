@@ -16,6 +16,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useTopNavigationStore } from "@/store/top-navgation-store";
 import { useShallow } from "zustand/react/shallow";
+import { Input } from "../ui/input";
 
 export function TopNavigation() {
   const { selectedModel, setSelectedModel, models } = useTopNavigationStore(
@@ -35,7 +36,7 @@ export function TopNavigation() {
       </Link>
       <div className="flex-1 max-w-md mx-4">
         <div className="relative">
-          <input
+          <Input
             type="text"
             placeholder="Search locations..."
             className="w-full h-10 px-4 rounded-md border border-input bg-background"
