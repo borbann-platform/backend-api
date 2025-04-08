@@ -27,12 +27,10 @@ import {
   Bath,
   Star,
   Clock,
-  ChevronDown,
-  Check,
   RefreshCw,
 } from "lucide-react"
 import Link from "next/link"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { TopNavigation } from "@/components/navigation/top-navigation"
 
 export default function MapsPage() {
   const [showFilters, setShowFilters] = useState(false)
@@ -48,13 +46,7 @@ export default function MapsPage() {
   const [selectedModel, setSelectedModel] = useState("Standard ML Model v2.4")
   const mapRef = useRef(null)
 
-  const models = [
-    "Standard ML Model v2.4",
-    "Enhanced Neural Network v1.8",
-    "Geospatial Regression v3.1",
-    "Time Series Forecast v2.0",
-    "Custom Model (User #1242)",
-  ]
+
 
   const handleSendMessage = () => {
     if (message.trim()) {
@@ -131,65 +123,7 @@ export default function MapsPage() {
       </div>
 
       {/* Top Navigation Bar */}
-      <div className="absolute top-0 left-0 right-0 bg-background/95 backdrop-blur-sm p-4 flex items-center justify-between z-10 border-b">
-        <Link href="/" className="flex items-center gap-2">
-          <Home className="h-5 w-5" />
-          <span className="font-semibold">BorBann</span>
-        </Link>
-        <div className="flex-1 max-w-md mx-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search locations..."
-              className="w-full h-10 px-4 rounded-md border border-input bg-background"
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1">
-                <BarChart2 className="h-4 w-4" />
-                <span className="hidden sm:inline">{selectedModel}</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[240px]">
-              {models.map((model) => (
-                <DropdownMenuItem
-                  key={model}
-                  onClick={() => setSelectedModel(model)}
-                  className="flex items-center gap-2"
-                >
-                  {model === selectedModel && <Check className="h-4 w-4 text-primary" />}
-                  <span className={model === selectedModel ? "font-medium" : ""}>{model}</span>
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuItem>
-                <Link href="/models" className="flex items-center w-full">
-                  <span className="text-primary">Manage Models...</span>
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Link href="/properties">
-            <Button variant="outline" size="sm" className="gap-1">
-              <Building className="h-4 w-4" />
-              <span className="hidden sm:inline">Properties</span>
-            </Button>
-          </Link>
-          <Link href="/price-prediction">
-            <Button variant="outline" size="sm" className="gap-1">
-              <BarChart2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Price Prediction</span>
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <TopNavigation />
 
       {/* Map Controls */}
       <div className="absolute top-20 right-4 flex flex-col gap-2 z-10">
