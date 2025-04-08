@@ -98,6 +98,7 @@ export default function DataPipelinePage() {
                 aiPowered={true}
               />
 
+              {/* mock pipeline card with data */}
               <PipelineCard
                 title="Rental Market Data"
                 description="Collects rental prices and availability"
