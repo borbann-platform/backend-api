@@ -1,6 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 
-export function StatusBadge({ status }: { status: "active" | "paused" | "error" }) {
+export function StatusBadge({
+  status,
+}: {
+  status: "active" | "paused" | "error";
+}) {
   if (status === "active") {
     return (
       <Badge

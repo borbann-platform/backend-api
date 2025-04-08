@@ -19,7 +19,6 @@ import { StatusBadge } from "./badge";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-
 interface PipelineCardProps {
   title: string;
   description: string;
