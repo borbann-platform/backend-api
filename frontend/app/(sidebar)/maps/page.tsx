@@ -83,7 +83,7 @@ export default function MapsPage() {
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gray-100 dark:bg-gray-900">
       {/* Map Container */}
-      <div className="absolute inset-0 bg-[url('/map.png')] bg-cover bg-center">
+      <div className="">
         {/* Map Placeholder - In a real implementation, this would be a map component */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-2xl text-muted-foreground opacity-0">Map View</div>
