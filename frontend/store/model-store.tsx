@@ -1,13 +1,13 @@
 import { create } from "zustand";
 
-type TopNavigationState = {
+type ModelState = {
   selectedModel: string;
   setSelectedModel: (model: string) => void;
   models: string[];
   setModels: (models: string[]) => void;
 };
 
-export const useTopNavigationStore = create<TopNavigationState>((set) => ({
+export const useModelState = create<ModelState>((set) => ({
   selectedModel: "Standard ML Model v2.4",
   setSelectedModel: (model) => set({ selectedModel: model }),
   models: [

@@ -14,18 +14,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useTopNavigationStore } from "@/store/top-navgation-store";
+import { useModelState } from "@/store/model-store";
 import { useShallow } from "zustand/react/shallow";
-import { Input } from "../ui/input";
 
 export function TopNavigation() {
-  const { selectedModel, setSelectedModel, models } = useTopNavigationStore(
-    useShallow(
-    (state) => ({
+  const { selectedModel, setSelectedModel, models } = useModelState(
+    useShallow((state) => ({
       selectedModel: state.selectedModel,
       setSelectedModel: state.setSelectedModel,
       models: state.models,
-    })),
+    }))
   );
 
   return (
