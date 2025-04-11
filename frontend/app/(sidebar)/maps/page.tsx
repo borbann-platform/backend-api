@@ -1,38 +1,32 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnalyticsPanel } from "@/components/map/analytics-panel";
+import MapWithSearch from "@/components/map/map-with-search";
+import { TopNavigation } from "@/components/navigation/top-navigation";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  MapPin,
-  Home,
   BarChart2,
-  Filter,
-  MessageCircle,
-  X,
-  Plus,
-  Minus,
-  Droplets,
-  Wind,
-  Sun,
-  LineChart,
-  Send,
-  Newspaper,
-  Building,
-  BedDouble,
   Bath,
+  BedDouble,
+  Building,
+  Droplets,
+  Filter,
+  Home,
+  MapPin,
+  MessageCircle,
+  Send,
   Star,
-  Clock,
-  RefreshCw,
+  Sun,
+  Wind,
+  X,
 } from "lucide-react";
 import Link from "next/link";
-import { TopNavigation } from "@/components/navigation/top-navigation";
-import MapWithSearch from "@/components/map/map-with-search";
-import { AnalyticsPanel } from "@/components/map/analytics-panel";
+import { useRef, useState } from "react";
+import Draggable from "react-draggable";
 
 export default function MapsPage() {
   const [showFilters, setShowFilters] = useState(false);
@@ -46,6 +40,7 @@ export default function MapsPage() {
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi! How can I help you today?" },
   ]);
+  const nodeRef = useRef<HTMLDivElement>(null);
 
   const handleSendMessage = () => {
     if (message.trim()) {
@@ -75,7 +70,7 @@ export default function MapsPage() {
     <div className="relative h-screen w-full overflow-hidden bg-gray-100 dark:bg-gray-900">
       <div>
         <div className="absolute inset-0 flex items-center justify-center">
-          {/* <MapWithSearch /> */}
+          <MapWithSearch />
         </div>
 
         {/* Sample Property Markers */}
@@ -291,7 +286,14 @@ export default function MapsPage() {
       )}
 
       {/* Analytics Panel */}
-      {showAnalytics && <AnalyticsPanel setShowAnalytics={setShowAnalytics}/>}
+
+      {showAnalytics && (
+        <Draggable nodeRef={nodeRef as React.RefObject<HTMLElement>}>
+          <div ref={nodeRef}>
+            <AnalyticsPanel setShowAnalytics={setShowAnalytics} />
+          </div>
+        </Draggable>
+      )}
 
       {/* Filters Panel */}
       {showFilters && (
