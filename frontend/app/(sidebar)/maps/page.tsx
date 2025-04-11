@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
+import { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import {
   MapPin,
   Home,
@@ -28,29 +28,30 @@ import {
   Star,
   Clock,
   RefreshCw,
-} from "lucide-react"
-import Link from "next/link"
-import { TopNavigation } from "@/components/navigation/top-navigation"
+} from "lucide-react";
+import Link from "next/link";
+import { TopNavigation } from "@/components/navigation/top-navigation";
+import MapWithSearch from "@/components/map/map-with-search";
 
 export default function MapsPage() {
-  const [showFilters, setShowFilters] = useState(false)
-  const [showAnalytics, setShowAnalytics] = useState(false)
-  const [showChat, setShowChat] = useState(false)
-  const [showPropertyInfo, setShowPropertyInfo] = useState(false)
-  const [activeTab, setActiveTab] = useState("basic")
-  const [priceRange, setPriceRange] = useState([5000000, 20000000])
-  const [radius, setRadius] = useState(30)
-  const [message, setMessage] = useState("")
-  const [messages, setMessages] = useState([{ role: "assistant", content: "Hi! How can I help you today?" }])
-  const [mapZoom, setMapZoom] = useState(14)
-  const [selectedModel, setSelectedModel] = useState("Standard ML Model v2.4")
-  const mapRef = useRef(null)
-
-
+  const [showFilters, setShowFilters] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [showPropertyInfo, setShowPropertyInfo] = useState(false);
+  const [activeTab, setActiveTab] = useState("basic");
+  const [priceRange, setPriceRange] = useState([5000000, 20000000]);
+  const [radius, setRadius] = useState(30);
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([
+    { role: "assistant", content: "Hi! How can I help you today?" },
+  ]);
+  const [mapZoom, setMapZoom] = useState(14);
+  const [selectedModel, setSelectedModel] = useState("Standard ML Model v2.4");
+  const mapRef = useRef(null);
 
   const handleSendMessage = () => {
     if (message.trim()) {
-      setMessages([...messages, { role: "user", content: message }])
+      setMessages([...messages, { role: "user", content: message }]);
       // Simulate AI response
       setTimeout(() => {
         setMessages((prev) => [
@@ -60,37 +61,41 @@ export default function MapsPage() {
             content:
               "I can provide information about properties in this area. Would you like to know about flood risks, air quality, or nearby amenities?",
           },
-        ])
-      }, 1000)
-      setMessage("")
+        ]);
+      }, 1000);
+      setMessage("");
     }
-  }
+  };
 
   const handleZoomIn = () => {
-    setMapZoom((prev) => Math.min(prev + 1, 20))
-  }
+    setMapZoom((prev) => Math.min(prev + 1, 20));
+  };
 
   const handleZoomOut = () => {
-    setMapZoom((prev) => Math.max(prev - 1, 10))
-  }
+    setMapZoom((prev) => Math.max(prev - 1, 10));
+  };
 
   const handlePropertyClick = () => {
-    setShowPropertyInfo(true)
-    setShowFilters(false)
-    setShowChat(false)
-  }
+    setShowPropertyInfo(true);
+    setShowFilters(false);
+    setShowChat(false);
+  };
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gray-100 dark:bg-gray-900">
-      {/* Map Container */}
-      <div className="">
-        {/* Map Placeholder - In a real implementation, this would be a map component */}
+      <div>
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-2xl text-muted-foreground opacity-0">Map View</div>
+          <MapWithSearch />
+          <div className="text-2xl text-muted-foreground opacity-0">
+            Map View
+          </div>
         </div>
 
         {/* Sample Property Markers */}
-        <div className="absolute left-1/4 top-1/3 text-primary cursor-pointer group" onClick={handlePropertyClick}>
+        <div
+          className="absolute left-1/4 top-1/3 text-primary cursor-pointer group"
+          onClick={handlePropertyClick}
+        >
           <div className="relative transition-transform transform group-hover:scale-125">
             <div className="absolute inset-0 w-10 h-10 bg-green-500 opacity-30 blur-lg rounded-full"></div>
             <MapPin className="h-10 w-10 text-green-500 drop-shadow-xl" />
@@ -100,7 +105,10 @@ export default function MapsPage() {
             </span>
           </div>
         </div>
-        <div className="absolute left-1/2 top-1/2 text-primary cursor-pointer group" onClick={handlePropertyClick}>
+        <div
+          className="absolute left-1/2 top-1/2 text-primary cursor-pointer group"
+          onClick={handlePropertyClick}
+        >
           <div className="relative transition-transform transform group-hover:scale-125">
             <div className="absolute inset-0 w-10 h-10 bg-yellow-500 opacity-30 blur-lg rounded-full"></div>
             <MapPin className="h-10 w-10 text-yellow-500 drop-shadow-xl" />
@@ -110,7 +118,10 @@ export default function MapsPage() {
             </span>
           </div>
         </div>
-        <div className="absolute right-1/4 top-2/3 text-primary cursor-pointer group" onClick={handlePropertyClick}>
+        <div
+          className="absolute right-1/4 top-2/3 text-primary cursor-pointer group"
+          onClick={handlePropertyClick}
+        >
           <div className="relative transition-transform transform group-hover:scale-125">
             <div className="absolute inset-0 w-10 h-10 bg-red-500 opacity-30 blur-lg rounded-full"></div>
             <MapPin className="h-10 w-10 text-red-500 drop-shadow-xl" />
@@ -125,37 +136,20 @@ export default function MapsPage() {
       {/* Top Navigation Bar */}
       <TopNavigation />
 
-      {/* Map Controls */}
-      <div className="absolute top-20 right-4 flex flex-col gap-2 z-10">
-        <Button
-          variant="secondary"
-          size="icon"
-          className="h-10 w-10 rounded-full bg-background/95 backdrop-blur-sm shadow-md"
-          onClick={handleZoomIn}
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="secondary"
-          size="icon"
-          className="h-10 w-10 rounded-full bg-background/95 backdrop-blur-sm shadow-md"
-          onClick={handleZoomOut}
-        >
-          <Minus className="h-5 w-5" />
-        </Button>
-      </div>
 
       {/* Map Overlay Controls */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
         <Button
           variant="secondary"
           size="icon"
-          className={`h-12 w-12 rounded-full bg-background/95 backdrop-blur-sm shadow-md ${showAnalytics ? "bg-primary text-primary-foreground" : ""}`}
+          className={`h-12 w-12 rounded-full bg-background/95 backdrop-blur-sm shadow-md ${
+            showAnalytics ? "bg-primary text-primary-foreground" : ""
+          }`}
           onClick={() => {
-            setShowAnalytics(!showAnalytics)
+            setShowAnalytics(!showAnalytics);
             if (showAnalytics) {
-              setShowFilters(false)
-              setShowPropertyInfo(false)
+              setShowFilters(false);
+              setShowPropertyInfo(false);
             }
           }}
         >
@@ -164,12 +158,14 @@ export default function MapsPage() {
         <Button
           variant="secondary"
           size="icon"
-          className={`h-12 w-12 rounded-full bg-background/95 backdrop-blur-sm shadow-md ${showFilters ? "bg-primary text-primary-foreground" : ""}`}
+          className={`h-12 w-12 rounded-full bg-background/95 backdrop-blur-sm shadow-md ${
+            showFilters ? "bg-primary text-primary-foreground" : ""
+          }`}
           onClick={() => {
-            setShowFilters(!showFilters)
+            setShowFilters(!showFilters);
             if (showFilters) {
-              setShowAnalytics(false)
-              setShowPropertyInfo(false)
+              setShowAnalytics(false);
+              setShowPropertyInfo(false);
             }
           }}
         >
@@ -178,11 +174,13 @@ export default function MapsPage() {
         <Button
           variant="secondary"
           size="icon"
-          className={`h-12 w-12 rounded-full bg-background/95 backdrop-blur-sm shadow-md ${showChat ? "bg-primary text-primary-foreground" : ""}`}
+          className={`h-12 w-12 rounded-full bg-background/95 backdrop-blur-sm shadow-md ${
+            showChat ? "bg-primary text-primary-foreground" : ""
+          }`}
           onClick={() => {
-            setShowChat(!showChat)
+            setShowChat(!showChat);
             if (showChat) {
-              setShowPropertyInfo(false)
+              setShowPropertyInfo(false);
             }
           }}
         >
@@ -199,7 +197,12 @@ export default function MapsPage() {
               <span className="font-medium">Property Details</span>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowPropertyInfo(false)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowPropertyInfo(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -244,12 +247,16 @@ export default function MapsPage() {
 
             <div className="space-y-4">
               <div>
-                <h4 className="font-medium text-sm mb-2">Environmental Factors</h4>
+                <h4 className="font-medium text-sm mb-2">
+                  Environmental Factors
+                </h4>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="flex flex-col items-center p-2 border rounded-md">
                     <Droplets className="h-5 w-5 text-blue-500 mb-1" />
                     <span className="text-xs font-medium">Flood Risk</span>
-                    <Badge className="mt-1 text-xs bg-amber-500">Moderate</Badge>
+                    <Badge className="mt-1 text-xs bg-amber-500">
+                      Moderate
+                    </Badge>
                   </div>
                   <div className="flex flex-col items-center p-2 border rounded-md">
                     <Wind className="h-5 w-5 text-purple-500 mb-1" />
@@ -314,14 +321,21 @@ export default function MapsPage() {
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowAnalytics(false)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowAnalytics(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
           <div className="map-overlay-content">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-muted-foreground">Information in radius will be analyzed</p>
+              <p className="text-sm text-muted-foreground">
+                Information in radius will be analyzed
+              </p>
               <Badge variant="outline" className="text-xs">
                 Using: {selectedModel}
               </Badge>
@@ -334,7 +348,9 @@ export default function MapsPage() {
                   <span className="font-medium">Area Price History</span>
                 </div>
                 <h3 className="text-2xl font-bold mb-1">10,000,000 Baht</h3>
-                <p className="text-xs text-muted-foreground mb-3">Overall Price History of this area</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Overall Price History of this area
+                </p>
 
                 <div className="h-20 w-full relative">
                   {/* Simple line chart simulation */}
@@ -358,7 +374,9 @@ export default function MapsPage() {
                   <span className="font-medium">Price Prediction</span>
                 </div>
                 <h3 className="text-2xl font-bold mb-1">15,000,000 Baht</h3>
-                <p className="text-xs text-muted-foreground mb-3">The estimated price based on various factors.</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  The estimated price based on various factors.
+                </p>
 
                 <div className="h-20 w-full relative">
                   {/* Simple line chart simulation */}
@@ -406,9 +424,12 @@ export default function MapsPage() {
               <div className="space-y-2">
                 <Card>
                   <CardContent className="p-3">
-                    <h5 className="text-sm font-medium">New BTS Extension Planned</h5>
+                    <h5 className="text-sm font-medium">
+                      New BTS Extension Planned
+                    </h5>
                     <p className="text-xs text-muted-foreground">
-                      The BTS Skytrain will be extended to cover more areas in Sukhumvit by 2025.
+                      The BTS Skytrain will be extended to cover more areas in
+                      Sukhumvit by 2025.
                     </p>
                     <div className="flex items-center text-xs text-muted-foreground mt-1">
                       <Clock className="h-3 w-3 mr-1" />
@@ -418,9 +439,12 @@ export default function MapsPage() {
                 </Card>
                 <Card>
                   <CardContent className="p-3">
-                    <h5 className="text-sm font-medium">Property Tax Changes</h5>
+                    <h5 className="text-sm font-medium">
+                      Property Tax Changes
+                    </h5>
                     <p className="text-xs text-muted-foreground">
-                      New property tax regulations will take effect next month affecting luxury condominiums.
+                      New property tax regulations will take effect next month
+                      affecting luxury condominiums.
                     </p>
                     <div className="flex items-center text-xs text-muted-foreground mt-1">
                       <Clock className="h-3 w-3 mr-1" />
@@ -453,13 +477,22 @@ export default function MapsPage() {
               <span className="font-medium">Property Filters</span>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowFilters(false)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowFilters(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          <Tabs defaultValue="basic" value={activeTab} onValueChange={setActiveTab}>
+          <Tabs
+            defaultValue="basic"
+            value={activeTab}
+            onValueChange={setActiveTab}
+          >
             <TabsList className="w-full grid grid-cols-2">
               <TabsTrigger value="basic">Basic</TabsTrigger>
               <TabsTrigger value="advanced">Advanced</TabsTrigger>
@@ -468,7 +501,9 @@ export default function MapsPage() {
             <TabsContent value="basic" className="p-4">
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Area Radius</label>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    Area Radius
+                  </label>
                   <div className="flex items-center gap-2">
                     <Slider
                       defaultValue={[30]}
@@ -483,7 +518,9 @@ export default function MapsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Time Period</label>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    Time Period
+                  </label>
                   <select className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
                     <option value="all">All Time</option>
                     <option value="1m">Last Month</option>
@@ -494,7 +531,9 @@ export default function MapsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Property Type</label>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    Property Type
+                  </label>
                   <select className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
                     <option value="any">Any Type</option>
                     <option value="house">House</option>
@@ -511,7 +550,9 @@ export default function MapsPage() {
             <TabsContent value="advanced" className="p-4">
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Price Range</label>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    Price Range
+                  </label>
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                     <span>฿{priceRange[0].toLocaleString()}</span>
                     <span>฿{priceRange[1].toLocaleString()}</span>
@@ -526,7 +567,9 @@ export default function MapsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium mb-1.5 block">Environmental Factors</label>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    Environmental Factors
+                  </label>
 
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Low Flood Risk</span>
@@ -545,7 +588,9 @@ export default function MapsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Facilities Nearby</label>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    Facilities Nearby
+                  </label>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="flex items-center space-x-2">
                       <input type="checkbox" id="bts" className="h-4 w-4" />
@@ -560,7 +605,11 @@ export default function MapsPage() {
                       </label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="hospital" className="h-4 w-4" />
+                      <input
+                        type="checkbox"
+                        id="hospital"
+                        className="h-4 w-4"
+                      />
                       <label htmlFor="hospital" className="text-sm">
                         Hospitals
                       </label>
@@ -590,7 +639,12 @@ export default function MapsPage() {
               <span className="font-medium">Chat Assistant</span>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowChat(false)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowChat(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -598,10 +652,17 @@ export default function MapsPage() {
 
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
             {messages.map((msg, index) => (
-              <div key={index} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div
+                key={index}
+                className={`flex ${
+                  msg.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
                 <div
                   className={`max-w-[80%] rounded-lg px-3 py-2 ${
-                    msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
                   }`}
                 >
                   {msg.content}
@@ -619,10 +680,15 @@ export default function MapsPage() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSendMessage()
+                  if (e.key === "Enter") handleSendMessage();
                 }}
               />
-              <Button variant="default" size="icon" className="h-10 w-10" onClick={handleSendMessage}>
+              <Button
+                variant="default"
+                size="icon"
+                className="h-10 w-10"
+                onClick={handleSendMessage}
+              >
                 <Send className="h-4 w-4" />
               </Button>
             </div>
@@ -631,7 +697,7 @@ export default function MapsPage() {
       )}
 
       {/* Map Legend */}
-      <div className="absolute bottom-8 left-4 bg-background/95 backdrop-blur-sm p-2 rounded-lg shadow-md z-10">
+      {/* <div className="absolute bottom-8 left-4 bg-background/95 backdrop-blur-sm p-2 rounded-lg shadow-md z-10">
         <div className="text-xs font-medium mb-1">Property Status</div>
         <div className="space-y-1">
           <div className="flex items-center gap-1.5">
@@ -647,8 +713,7 @@ export default function MapsPage() {
             <span className="text-xs">Sold</span>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
-  )
+  );
 }
-

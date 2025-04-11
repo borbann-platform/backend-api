@@ -34,18 +34,6 @@ export function TopNavigation() {
         <Home className="h-5 w-5" />
         <span className="font-semibold">BorBann</span>
       </Link>
-      <div className="flex-1 max-w-md mx-4">
-        <div className="relative">
-          <Input
-            type="text"
-            placeholder="Search locations..."
-            className="w-full h-10 px-4 rounded-md border border-input bg-background"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
-      </div>
       <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
