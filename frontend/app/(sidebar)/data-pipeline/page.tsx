@@ -1,13 +1,34 @@
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus } from "lucide-react";
-import Link from "next/link";
+"use client";
+
 import PageHeader from "@/components/page-header";
 import { PipelineCard } from "@/components/pipeline/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { listPipelines } from "@/lib/api/pipelines";
+import { Pipeline } from "@/lib/api/pipelines/types";
+import { Plus } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function DataPipelinePage() {
+  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchPipelines = async () => {
+      try {
+        const data = await listPipelines();
+        setPipelines(data);
+      } catch (err) {
+        console.error("Error fetching pipelines:", err);
+        setError("Failed to load pipelines");
+      }
+    };
+
+    fetchPipelines();
+  }, []);
   return (
     <div className="container mx-auto p-6">
+      {error && <p className="text-red-500">{error}</p>}
       <PageHeader
         title="Data Pipelines"
         description="Manage your automated data collection pipelines"
@@ -37,7 +58,7 @@ export default function DataPipelinePage() {
           <TabsContent value="active" className="mt-4">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <PipelineCard
-                title="Property Listings"
+                name="Property Listings"
                 description="Scrapes real estate listings from multiple websites"
                 status="active"
                 lastRun="2 hours ago"
@@ -48,7 +69,7 @@ export default function DataPipelinePage() {
               />
 
               <PipelineCard
-                title="Rental Market Data"
+                name="Rental Market Data"
                 description="Collects rental prices and availability"
                 status="active"
                 lastRun="Yesterday"
@@ -59,7 +80,7 @@ export default function DataPipelinePage() {
               />
 
               <PipelineCard
-                title="Price Comparison"
+                name="Price Comparison"
                 description="Tracks property price changes over time"
                 status="error"
                 lastRun="2 days ago"
@@ -74,7 +95,7 @@ export default function DataPipelinePage() {
           <TabsContent value="paused" className="mt-4">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <PipelineCard
-                title="Commercial Properties"
+                name="Commercial Properties"
                 description="Collects data on commercial real estate"
                 status="paused"
                 lastRun="1 week ago"
@@ -88,7 +109,7 @@ export default function DataPipelinePage() {
           <TabsContent value="all" className="mt-4">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <PipelineCard
-                title="Property Listings"
+                name="Property Listings"
                 description="Scrapes real estate listings from multiple websites"
                 status="active"
                 lastRun="2 hours ago"
@@ -100,7 +121,7 @@ export default function DataPipelinePage() {
 
               {/* mock pipeline card with data */}
               <PipelineCard
-                title="Rental Market Data"
+                name="Rental Market Data"
                 description="Collects rental prices and availability"
                 status="active"
                 lastRun="Yesterday"
@@ -111,7 +132,7 @@ export default function DataPipelinePage() {
               />
 
               <PipelineCard
-                title="Price Comparison"
+                name="Price Comparison"
                 description="Tracks property price changes over time"
                 status="error"
                 lastRun="2 days ago"
@@ -122,7 +143,7 @@ export default function DataPipelinePage() {
               />
 
               <PipelineCard
-                title="Commercial Properties"
+                name="Commercial Properties"
                 description="Collects data on commercial real estate"
                 status="paused"
                 lastRun="1 week ago"

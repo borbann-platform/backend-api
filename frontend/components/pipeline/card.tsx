@@ -1,26 +1,25 @@
-import {
-  Clock,
-  Database,
-  Play,
-  RefreshCw,
-  Pause,
-  AlertTriangle,
-  Copy,
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { StatusBadge } from "./badge";
+import {
+  AlertTriangle,
+  Clock,
+  Copy,
+  Database,
+  Pause,
+  Play,
+  RefreshCw,
+} from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { StatusBadge } from "./badge";
 
 interface PipelineCardProps {
-  title: string;
+  name: string;
   description: string;
   status: "active" | "paused" | "error";
   lastRun: string;
@@ -32,7 +31,7 @@ interface PipelineCardProps {
 }
 
 export function PipelineCard({
-  title,
+  name,
   description,
   status,
   lastRun,
@@ -51,10 +50,10 @@ export function PipelineCard({
     >
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{title}</CardTitle>
+          <CardTitle className="text-lg">{name}</CardTitle>
           <StatusBadge status={status} />
         </div>
-        <CardDescription>{description}</CardDescription>
+        {/* <CardDescription>{description}</CardDescription> */}
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
@@ -86,7 +85,7 @@ export function PipelineCard({
       </CardContent>
       <CardFooter className="flex justify-between">
         <Link
-          href={`/data-pipeline/${title.toLowerCase().replace(/\s+/g, "-")}`}
+          href={`/data-pipeline/${name.toLowerCase().replace(/\s+/g, "-")}`}
         >
           <Button variant="outline" size="sm">
             View Details

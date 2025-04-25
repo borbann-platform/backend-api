@@ -8,7 +8,7 @@ import { PropertyInfoPanel } from "@/components/map/property-info-panel";
 import MapWithSearch from "@/components/map/map-with-search";
 import { TopNavigation } from "@/components/navigation/top-navigation";
 import { Button } from "@/components/ui/button";
-import { BarChart2, Filter, MapPin, MessageCircle } from "lucide-react";
+import { BarChart2, Filter, MessageCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import Draggable from "react-draggable";
 
@@ -36,7 +36,7 @@ export default function MapsPage() {
         </div>
 
         {/* Sample Property Markers */}
-        <div
+        {/* <div
           className="absolute left-1/4 top-1/3 text-primary cursor-pointer group"
           onClick={handlePropertyClick}
         >
@@ -74,7 +74,7 @@ export default function MapsPage() {
               Sold
             </span>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Top Navigation Bar */}
@@ -91,7 +91,6 @@ export default function MapsPage() {
           onClick={() => {
             setShowAnalytics(!showAnalytics);
             if (showAnalytics) {
-              setShowFilters(false);
               setShowPropertyInfo(false);
             }
           }}
@@ -107,7 +106,6 @@ export default function MapsPage() {
           onClick={() => {
             setShowFilters(!showFilters);
             if (showFilters) {
-              setShowAnalytics(false);
               setShowPropertyInfo(false);
             }
           }}
