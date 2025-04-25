@@ -5,6 +5,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../ui/accordion";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import {
   Card,
   CardContent,
@@ -12,15 +14,13 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { Label } from "../ui/label";
 import { Input } from "../ui/input";
-import { Badge } from "../ui/badge";
+import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
-import { Button } from "../ui/button";
 
 export function AddDataSource() {
   return (
-    <Card className="border-2 hover:border-highlight-border transition-all duration-200">
+    <Card className="border-0 hover:border-highlight-border transition-all duration-200">
       <CardHeader>
         <CardTitle>Data Sources</CardTitle>
         <CardDescription>

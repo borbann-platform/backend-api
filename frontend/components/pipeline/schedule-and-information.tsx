@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 
 export function ScheduleAndInformation() {
   return (
-    <Card className="mt-6 border-2 hover:border-highlight-border transition-all duration-200">
+    <Card className="mt-6 border-0 hover:border-highlight-border transition-all duration-200">
       <CardHeader>
         <CardTitle>Schedule & Automation</CardTitle>
         <CardDescription>
