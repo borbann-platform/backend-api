@@ -78,6 +78,7 @@ export function AddDataSource() {
                     variant="outline"
                     size="sm"
                     className="text-destructive"
+                    type="button"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Remove Source
@@ -106,9 +107,7 @@ export function AddDataSource() {
                       <p className="text-sm text-muted-foreground">
                         Drag and drop your file here, or click to browse
                       </p>
-                      <Button variant="outline" className="mt-2">
-                        Select File
-                      </Button>
+                      <Input type="file" className="mt-2 cursor-pointer" />
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -121,6 +120,7 @@ export function AddDataSource() {
                     variant="outline"
                     size="sm"
                     className="text-destructive"
+                    type="button"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Remove Source
@@ -167,6 +167,7 @@ export function AddDataSource() {
                   <Button
                     variant="outline"
                     size="sm"
+                    type="button"
                     className="text-destructive"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -179,15 +180,27 @@ export function AddDataSource() {
         </Accordion>
 
         <div className="flex flex-col gap-2 mt-4">
-          <Button variant="outline" className="w-full justify-start gap-2">
+          <Button
+            variant="outline"
+            type="button"
+            className="w-full justify-start gap-2"
+          >
             <Plus className="h-4 w-4" />
             Add Website Source
           </Button>
-          <Button variant="outline" className="w-full justify-start gap-2">
+          <Button
+            variant="outline"
+            type="button"
+            className="w-full justify-start gap-2"
+          >
             <Plus className="h-4 w-4" />
             Add File Upload Source
           </Button>
-          <Button variant="outline" className="w-full justify-start gap-2">
+          <Button
+            variant="outline"
+            type="button"
+            className="w-full justify-start gap-2"
+          >
             <Plus className="h-4 w-4" />
             Add API Source
           </Button>

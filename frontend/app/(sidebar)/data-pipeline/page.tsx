@@ -48,7 +48,7 @@ export default function DataPipelinePage() {
 
           <div className="flex justify-end mt-4">
             <Link href="/data-pipeline/create">
-              <Button className="gap-2">
+              <Button className="gap-2 cursor-pointer">
                 <Plus className="h-4 w-4" />
                 Create Pipeline
               </Button>
