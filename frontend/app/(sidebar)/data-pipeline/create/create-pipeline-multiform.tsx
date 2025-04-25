@@ -9,6 +9,7 @@ import { AddDataSource } from "@/components/pipeline/add-data-source";
 import { PipelineAiAssistant } from "@/components/pipeline/ai-assistant";
 import { PipelineDetails } from "@/components/pipeline/details";
 import { ScheduleAndInformation } from "@/components/pipeline/schedule-and-information";
+import { PipelineSummary } from "@/components/pipeline/summary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
@@ -21,17 +22,8 @@ const stepComponents = [
   <AddDataSource key="datasource" />,
   <PipelineAiAssistant key="ai" />,
   <ScheduleAndInformation key="schedule" />,
-  <div
-    key="inputs"
-    className="border border-dashed rounded-md flex flex-col items-center justify-center h-[8rem]"
-  >
-    <h3 className="text-base font-semibold text-center">
-      No Inputs Added Yet!
-    </h3>
-    <p className="text-xs text-muted-foreground text-center">
-      Start building your form by adding input fields.
-    </p>
-  </div>,
+  <PipelineSummary key="summary" />,
+  ,
 ];
 
 const motionVariants = {

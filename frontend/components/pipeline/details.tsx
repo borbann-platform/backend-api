@@ -1,3 +1,6 @@
+"use client";
+
+import { useFormContext } from "react-hook-form";
 import {
   Card,
   CardContent,
@@ -10,6 +13,8 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 
 export function PipelineDetails() {
+  const { register } = useFormContext();
+
   return (
     <Card className="border-0 hover:border-highlight-border transition-all duration-200">
       <CardHeader>
@@ -22,7 +27,11 @@ export function PipelineDetails() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Pipeline Name</Label>
-            <Input id="name" placeholder="e.g., Property Listings Pipeline" />
+            <Input
+              id="name"
+              placeholder="e.g., Property Listings Pipeline"
+              {...register("name")}
+            />
           </div>
 
           <div className="space-y-2">
@@ -31,6 +40,7 @@ export function PipelineDetails() {
               id="description"
               placeholder="Describe what this pipeline collects and how it will be used"
               rows={4}
+              {...register("description")}
             />
           </div>
 
@@ -39,6 +49,7 @@ export function PipelineDetails() {
             <Input
               id="tags"
               placeholder="e.g., real-estate, properties, listings"
+              {...register("tags")}
             />
             <p className="text-xs text-muted-foreground mt-1">
               Separate tags with commas
