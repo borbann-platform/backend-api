@@ -1,3 +1,4 @@
+import { useFormContext } from "react-hook-form";
 import {
   Card,
   CardContent,
@@ -9,6 +10,12 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 
 export function PipelineAiAssistant() {
+  const {
+    handleSubmit,
+    reset,
+    register,
+    formState: { errors },
+  } = useFormContext();
   return (
     <Card className="mt-6 border-0 hover:border-highlight-border transition-all duration-200">
       <CardHeader>
@@ -24,6 +31,7 @@ export function PipelineAiAssistant() {
               placeholder="E.g., Focus on extracting pricing trends, ignore promotional content, prioritize property features..."
               rows={4}
               className="border-primary/20"
+              {...register("aiPrompt")}
             />
             <p className="text-xs text-muted-foreground mt-1">
               Provide specific instructions to guide the AI in processing your

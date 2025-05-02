@@ -13,7 +13,12 @@ import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 
 export function PipelineDetails() {
-  const { register } = useFormContext();
+  const {
+    handleSubmit,
+    reset,
+    register,
+    formState: { errors },
+  } = useFormContext();
 
   return (
     <Card className="border-0 hover:border-highlight-border transition-all duration-200">
@@ -33,6 +38,13 @@ export function PipelineDetails() {
               {...register("name")}
             />
           </div>
+          {errors.name && (
+            <p className="text-sm text-destructive mt-1">
+              {typeof errors.name?.message === "string"
+                ? errors.name.message
+                : ""}
+            </p>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
@@ -43,6 +55,13 @@ export function PipelineDetails() {
               {...register("description")}
             />
           </div>
+          {errors.description && (
+            <p className="text-sm text-destructive mt-1">
+              {typeof errors.description?.message === "string"
+                ? errors.description.message
+                : ""}
+            </p>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="tags">Tags (optional)</Label>

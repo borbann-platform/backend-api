@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
+import { pipelineSchema, PipelineFormValues } from "@/lib/validations/pipeline";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 const TOTAL_STEPS = 5;
 
@@ -37,7 +39,9 @@ export default function CratePipelineForm() {
   const isFirstStep = step === 0;
   const isLastStep = step === TOTAL_STEPS - 1;
 
-  const form = useForm();
+  const form = useForm<PipelineFormValues>({
+    resolver: zodResolver(pipelineSchema),
+  });
   const { handleSubmit, reset } = form;
 
   const onSubmit = async (formData: unknown) => {
