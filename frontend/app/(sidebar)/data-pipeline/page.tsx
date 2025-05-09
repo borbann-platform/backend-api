@@ -4,7 +4,6 @@ import PageHeader from "@/components/page-header";
 import { PipelineCard } from "@/components/pipeline/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { listPipelines } from "@/lib/api/pipelines";
 import { Pipeline } from "@/lib/api/pipelines/types";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -16,8 +15,8 @@ export default function DataPipelinePage() {
   useEffect(() => {
     const fetchPipelines = async () => {
       try {
-        const data = await listPipelines();
-        setPipelines(data);
+        // const data = await listPipelines();
+        // setPipelines(data);
       } catch (err) {
         console.error("Error fetching pipelines:", err);
         setError("Failed to load pipelines");

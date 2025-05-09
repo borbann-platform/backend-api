@@ -1,13 +1,12 @@
 import { Pipeline, PipelineCreate, Run } from "./types";
 
-// Base URL for your API
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // if (typeof window !== "undefined") {
 //   console.log(API_BASE);
 // }
 
-// Utility for handling fetch responses
+// utility for handling fetch responses
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const errorBody = await res.json();

@@ -1,4 +1,5 @@
 import { DatabaseIcon, FileUp, Globe, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -18,7 +19,144 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 
+type SourceType = "website" | "file" | "api";
+
+type Source = {
+  id: string;
+  type: SourceType;
+};
+
 export function AddDataSource() {
+  const [sources, setSources] = useState<Source[]>([
+    { id: "source-1", type: "website" },
+    { id: "source-2", type: "file" },
+    { id: "source-3", type: "api" },
+  ]);
+
+  const addSource = (type: SourceType) => {
+    const newId = `source-${Date.now()}`;
+    setSources((prev) => [...prev, { id: newId, type }]);
+  };
+
+  const removeSource = (id: string) => {
+    setSources((prev) => prev.filter((source) => source.id !== id));
+  };
+
+  const renderSourceItem = (source: Source) => {
+    const commonProps = {
+      className: "border rounded-md mb-4 data-source-card",
+      value: source.id,
+    };
+
+    return (
+      <AccordionItem key={source.id} {...commonProps}>
+        <AccordionTrigger className="px-4">
+          <div className="flex items-center">
+            {source.type === "website" && (
+              <Globe className="mr-2 h-5 w-5 text-primary" />
+            )}
+            {source.type === "file" && (
+              <FileUp className="mr-2 h-5 w-5 text-primary" />
+            )}
+            {source.type === "api" && (
+              <DatabaseIcon className="mr-2 h-5 w-5 text-primary" />
+            )}
+            <span>{`${
+              source.type.charAt(0).toUpperCase() + source.type.slice(1)
+            } Source`}</span>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="px-4 pb-4">
+          {source.type === "website" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Website URL</Label>
+                <Input placeholder="https://example.com/listings" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Additional URLs (optional)</Label>
+                  <Badge variant="outline" className="text-xs">
+                    Pattern Detection
+                  </Badge>
+                </div>
+                <Textarea
+                  placeholder="https://example.com/page2&#10;https://example.com/page3"
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={() => removeSource(source.id)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remove Source
+                </Button>
+              </div>
+            </div>
+          )}
+          {source.type === "file" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Upload File</Label>
+                <div className="flex items-center justify-center p-6 border-2 border-dashed rounded-lg">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Drag and drop your file here, or click to browse
+                    </p>
+                    <Input type="file" className="mt-2 cursor-pointer" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={() => removeSource(source.id)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remove Source
+                </Button>
+              </div>
+            </div>
+          )}
+          {source.type === "api" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>API Endpoint URL</Label>
+                <Input placeholder="https://api.example.com/data" />
+              </div>
+              <div className="space-y-2">
+                <Label>Authentication Type</Label>
+                <select className="w-full border rounded-md px-3 py-2 text-sm">
+                  <option value="none">None</option>
+                  <option value="basic">Basic Auth</option>
+                  <option value="bearer">Bearer Token</option>
+                  <option value="api-key">API Key</option>
+                </select>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={() => removeSource(source.id)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remove Source
+                </Button>
+              </div>
+            </div>
+          )}
+        </AccordionContent>
+      </AccordionItem>
+    );
+  };
+
   return (
     <Card className="border-0 hover:border-highlight-border transition-all duration-200">
       <CardHeader>
@@ -32,151 +170,9 @@ export function AddDataSource() {
           type="single"
           collapsible
           className="w-full"
-          defaultValue="source-1"
+          defaultValue={sources[0]?.id}
         >
-          <AccordionItem
-            value="source-1"
-            className="border rounded-md mb-4 data-source-card active"
-          >
-            <AccordionTrigger className="px-4">
-              <div className="flex items-center">
-                <Globe className="mr-2 h-5 w-5 text-primary" />
-                <span>Website Source #1</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="url-1">Website URL</Label>
-                  <Input
-                    id="url-1"
-                    placeholder="https://example.com/listings"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="additional-urls-1">
-                      Additional URLs (optional)
-                    </Label>
-                    <Badge variant="outline" className="text-xs">
-                      Pattern Detection
-                    </Badge>
-                  </div>
-                  <Textarea
-                    id="additional-urls-1"
-                    placeholder="https://example.com/listings/page2&#10;https://example.com/listings/page3"
-                    rows={3}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Add multiple URLs from the same website (one per line)
-                  </p>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive"
-                    type="button"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Remove Source
-                  </Button>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem
-            value="source-2"
-            className="border rounded-md mb-4 data-source-card"
-          >
-            <AccordionTrigger className="px-4">
-              <div className="flex items-center">
-                <FileUp className="mr-2 h-5 w-5 text-primary" />
-                <span>File Upload Source #1</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="file-upload-1">Upload File</Label>
-                  <div className="flex items-center justify-center p-6 border-2 border-dashed rounded-lg">
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">
-                        Drag and drop your file here, or click to browse
-                      </p>
-                      <Input type="file" className="mt-2 cursor-pointer" />
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Supported formats: CSV, JSON, Excel, XML (up to 50MB)
-                  </p>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive"
-                    type="button"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Remove Source
-                  </Button>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem
-            value="source-3"
-            className="border rounded-md mb-4 data-source-card"
-          >
-            <AccordionTrigger className="px-4">
-              <div className="flex items-center">
-                <DatabaseIcon className="mr-2 h-5 w-5 text-primary" />
-                <span>API Source #1</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="api-url-1">API Endpoint URL</Label>
-                  <Input
-                    id="api-url-1"
-                    placeholder="https://api.example.com/data"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="auth-type-1">Authentication Type</Label>
-                  <select
-                    id="auth-type-1"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="none">None</option>
-                    <option value="basic">Basic Auth</option>
-                    <option value="bearer">Bearer Token</option>
-                    <option value="api-key">API Key</option>
-                  </select>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    type="button"
-                    className="text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Remove Source
-                  </Button>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+          {sources.map(renderSourceItem)}
         </Accordion>
 
         <div className="flex flex-col gap-2 mt-4">
@@ -184,6 +180,7 @@ export function AddDataSource() {
             variant="outline"
             type="button"
             className="w-full justify-start gap-2"
+            onClick={() => addSource("website")}
           >
             <Plus className="h-4 w-4" />
             Add Website Source
@@ -192,6 +189,7 @@ export function AddDataSource() {
             variant="outline"
             type="button"
             className="w-full justify-start gap-2"
+            onClick={() => addSource("file")}
           >
             <Plus className="h-4 w-4" />
             Add File Upload Source
@@ -200,6 +198,7 @@ export function AddDataSource() {
             variant="outline"
             type="button"
             className="w-full justify-start gap-2"
+            onClick={() => addSource("api")}
           >
             <Plus className="h-4 w-4" />
             Add API Source
