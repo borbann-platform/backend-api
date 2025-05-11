@@ -9,6 +9,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .base import DataSourceAdapter
+from loguru import logger
 
 
 class ApiAdapter(DataSourceAdapter):
@@ -20,7 +21,8 @@ class ApiAdapter(DataSourceAdapter):
         self,
         url: str,
         headers: Optional[Dict[str, str]] = None,
-        timeout: float = 30
+        timeout: float = 30,
+        token: Optional[str] = None,
     ):
         """
         Initialize the API adapter.
@@ -29,10 +31,14 @@ class ApiAdapter(DataSourceAdapter):
             url: Endpoint URL to fetch.
             headers: Optional HTTP headers.
             timeout: Timeout in seconds for the request.
+            token: Optional bearer token for Authorization header.
         """
         self.url = url
         self.headers = headers or {}
+        if token:
+            self.headers["Authorization"] = f"Bearer {token}"
         self.timeout = timeout
+        logger.info(f"Initializing ApiAdapter for URL: {url}")
         self.session = self._init_session()
 
     def _init_session(self) -> requests.Session:
@@ -49,6 +55,7 @@ class ApiAdapter(DataSourceAdapter):
         adapter = HTTPAdapter(max_retries=retries)
         session.mount("https://", adapter)
         session.mount("http://", adapter)
+        logger.debug("HTTP session initialized with retry strategy.")
         return session
 
     def fetch(self) -> List[Dict[str, Any]]:
@@ -61,21 +68,27 @@ class ApiAdapter(DataSourceAdapter):
         Raises:
             RuntimeError: On network error, HTTP error, or JSON parse error.
         """
+        logger.info(f"Fetching data from API: {self.url}")
         try:
             response = self.session.get(
                 self.url, headers=self.headers, timeout=self.timeout
             )
             response.raise_for_status()
+            logger.debug(f"Received response with status code: {response.status_code}")
         except requests.exceptions.RequestException as e:
+            logger.error(f"API request failed: {e}")
             raise RuntimeError(f"API request failed: {e}")
 
         try:
             data = response.json()
+            logger.debug(f"Successfully parsed JSON response from {self.url}")
         except ValueError as e:
+            logger.error(f"Failed to parse JSON response: {e}")
             raise RuntimeError(f"Failed to parse JSON response: {e}")
 
         if isinstance(data, list):
             return data
         if isinstance(data, dict):
             return [data]
+        logger.error("Unexpected JSON structure: expected list or dict.")
         raise RuntimeError("Unexpected JSON structure: expected list or dict.")

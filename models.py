@@ -6,7 +6,7 @@ from typing import List, Union, Annotated, Optional, Literal, Dict, Any
 from uuid import UUID
 from datetime import datetime
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator, ValidationInfo
 
 
 class RunCreate(BaseModel):
@@ -75,12 +75,22 @@ class ScrapeConfig(BaseModel):
 
 class FileConfig(BaseModel):
     """
-    Configuration for a file-based source.
+    Configuration for a file-based source. Supports either a file path or an uploaded file.
     """
-    path: str = Field(
-        ...,
-        description="Path to the input file",
+    path: Optional[str] = Field(
+        None,
+        description="Path to the input file (optional if upload is provided)",
         example="/data/myfile.json"
+    )
+    upload: Optional[Any] = Field(
+        None,
+        description="Uploaded file object or metadata (optional if path is provided)",
+        example=None
+    )
+    upload_filename: Optional[str] = Field(
+        None,
+        description="Original filename of the uploaded file (for validation)",
+        example="myfile.json"
     )
     format: Literal["csv", "json", "sqlite"] = Field(
         "json",
@@ -88,12 +98,30 @@ class FileConfig(BaseModel):
         example="csv"
     )
 
-    @field_validator("path")
-    def path_extension_matches_format(cls, v: str, values):
-        fmt = values.get("format")
-        if fmt and not v.lower().endswith(f".{fmt}"):
-            raise ValueError(f"File extension must match format '{fmt}'")
+    @field_validator("path", mode="before")
+    def require_path_or_upload(cls, v, info: ValidationInfo):
+        data = info.data
+        if not v and not data.get("upload"):
+            raise ValueError("Either 'path' or 'upload' must be provided.")
         return v
+
+    @field_validator("upload_filename", mode="before")
+    def filename_extension_matches_format(cls, v, info: ValidationInfo):
+        fmt = info.data.get("format")
+        if v and fmt and not v.lower().endswith(f".{fmt}"):
+            raise ValueError(f"Uploaded file extension must match format '{fmt}'")
+        return v
+
+    @field_validator("path", mode="after")
+    def path_or_upload_extension_matches_format(cls, v, info: ValidationInfo):
+        fmt = info.data.get("format")
+        upload_filename = info.data.get("upload_filename")
+        if v and fmt and not v.lower().endswith(f".{fmt}"):
+            raise ValueError(f"File extension must match format '{fmt}'")
+        if upload_filename and fmt and not upload_filename.lower().endswith(f".{fmt}"):
+            raise ValueError(f"Uploaded file extension must match format '{fmt}'")
+        return v
+
 
 
 class ApiSource(BaseModel):

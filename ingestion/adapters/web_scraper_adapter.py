@@ -21,6 +21,7 @@ from crawl4ai.extraction_strategy import (
 )
 
 from .base import DataSourceAdapter
+from loguru import logger
 
 
 class WebScraperAdapter(DataSourceAdapter):
@@ -60,6 +61,7 @@ class WebScraperAdapter(DataSourceAdapter):
         self.output_format = output_format
         self.verbose = verbose
         self.cache_mode = cache_mode
+        logger.info(f"Initialized WebScraperAdapter for URLs: {urls}")
 
     def fetch(self) -> List[Dict[str, Any]]:
         """
@@ -71,15 +73,18 @@ class WebScraperAdapter(DataSourceAdapter):
         Raises:
             RuntimeError: On failure during crawling or extraction.
         """
+        logger.info("Starting synchronous fetch for web scraping.")
         try:
             return asyncio.run(self._fetch_async())
         except Exception as e:
+            logger.error(f"Web scraping failed: {e}")
             raise RuntimeError(f"Web scraping failed: {e}")
 
     async def _fetch_async(self) -> List[Dict[str, Any]]:
         """
         Internal async method to perform crawling and extraction.
         """
+        logger.info("Starting async web scraping fetch.")
         # Initialize crawler
         browser_cfg = BrowserConfig(headless=True, verbose=self.verbose)
         crawler = AsyncWebCrawler(config=browser_cfg)
@@ -96,7 +101,9 @@ class WebScraperAdapter(DataSourceAdapter):
                 extraction_strategy = JsonCssExtractionStrategy(
                     schema=schema, verbose=self.verbose
                 )
+                logger.debug(f"Loaded schema file: {self.schema_file}")
             except Exception as e:
+                logger.error(f"Failed to load schema file '{self.schema_file}': {e}")
                 await crawler.close()
                 raise RuntimeError(
                     f"Failed to load schema file '{self.schema_file}': {e}"
@@ -109,7 +116,9 @@ class WebScraperAdapter(DataSourceAdapter):
                 apply_chunking=True,
                 verbose=self.verbose,
             )
+            logger.debug("Using LLM extraction strategy.")
         else:
+            logger.error("Either 'schema_file' or 'prompt' must be provided.")
             await crawler.close()
             raise ValueError("Either 'schema_file' or 'prompt' must be provided.")
 
@@ -117,6 +126,7 @@ class WebScraperAdapter(DataSourceAdapter):
         try:
             cache_enum = getattr(CacheMode, self.cache_mode.upper())
         except AttributeError:
+            logger.warning(f"Invalid cache mode '{self.cache_mode}', defaulting to ENABLED.")
             cache_enum = CacheMode.ENABLED
 
         run_cfg = CrawlerRunConfig(
@@ -127,9 +137,11 @@ class WebScraperAdapter(DataSourceAdapter):
 
         # Execute crawl
         try:
+            logger.info(f"Crawling URLs: {self.urls}")
             results: List[CrawlResult] = await crawler.arun_many(
                 urls=self.urls, config=run_cfg
             )
+            logger.debug(f"Crawling completed. Results: {results}")
         finally:
             await crawler.close()
 
@@ -137,10 +149,16 @@ class WebScraperAdapter(DataSourceAdapter):
         records: List[Dict[str, Any]] = []
         for res in results:
             if not res.success or not res.extracted_content:
+                logger.warning(f"Skipping failed or empty result for URL: {getattr(res, 'url', None)}")
                 continue
             try:
                 content = json.loads(res.extracted_content)
+                logger.debug(f"Parsed extracted content for URL: {res.url}")
             except Exception:
+                logger.error(f"Failed to parse extracted content for URL: {res.url}")
+                continue
+            if content is None:
+                logger.warning(f"Extracted content is None for URL: {res.url}")
                 continue
             if isinstance(content, list):
                 for item in content:
@@ -150,5 +168,8 @@ class WebScraperAdapter(DataSourceAdapter):
             elif isinstance(content, dict):
                 content["source_url"] = res.url
                 records.append(content)
+            else:
+                logger.warning(f"Extracted content for URL {res.url} is not a list or dict: {type(content)}")
 
+        logger.info(f"Web scraping completed. Extracted {len(records)} records.")
         return records

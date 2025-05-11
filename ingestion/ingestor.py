@@ -7,6 +7,8 @@ from typing import List, Dict, Any
 from ingestion.adapters.api_adapter import ApiAdapter
 from ingestion.adapters.file_adapter import FileAdapter
 from ingestion.adapters.web_scraper_adapter import WebScraperAdapter
+from pydantic import BaseModel
+from loguru import logger
 
 
 class Ingestor:
@@ -31,11 +33,24 @@ class Ingestor:
             ValueError: For unknown source types.
             RuntimeError: If an adapter fails during fetch.
         """
+        from log.logging_utils import pipeline_log
         aggregated: List[Dict[str, Any]] = []
+        logger.info("Starting ingestion run for sources.")
 
         for src in sources:
-            src_type = src.get("type")
-            config = src.get("config", {})
+            # accept Pydantic models or raw dicts
+            if isinstance(src, BaseModel):
+                src_item = src.dict()
+            else:
+                src_item = src
+            src_type = src_item.get("type")
+            config = src_item.get("config", {})
+            # convert BaseModel config to dict if needed
+            if not isinstance(config, dict) and hasattr(config, "dict"):
+                config = config.dict(exclude_unset=True)
+            pipeline_id = config.get("pipeline_id") or src_item.get("pipeline_id")
+            run_id = config.get("run_id") or src_item.get("run_id")
+            logger.info(f"Processing source type: {src_type} with config: {config}")
             if src_type == "api":
                 adapter = ApiAdapter(**config)
             elif src_type == "scrape":
@@ -43,16 +58,22 @@ class Ingestor:
             elif src_type == "file":
                 adapter = FileAdapter(**config)
             else:
+                logger.error(f"Unknown source type: {src_type}")
+                pipeline_log("ERROR", f"Unknown source type: {src_type}", pipeline_id, run_id, status="FAILED")
                 raise ValueError(f"Unknown source type: {src_type}")
 
             try:
-                data = adapter.fetch()
-                aggregated.extend(data)
+                logger.info(f"Fetching records using {src_type} adapter.")
+                records = adapter.fetch()
+                logger.info(f"Fetched {len(records)} records from {src_type} source.")
+                aggregated.extend(records)
+                pipeline_log("SUCCESS", f"Fetched {len(records)} records.", pipeline_id, run_id, status="COMPLETED")
             except Exception as e:
-                raise RuntimeError(
-                    f"Ingestion failed for source '{src_type}' with config {config}: {e}"
-                )
+                logger.error(f"Fetch failed for source {src_type}: {e}")
+                pipeline_log("ERROR", f"Fetch failed: {e}", pipeline_id, run_id, status="FAILED")
+                raise RuntimeError(f"Fetch failed for source {src_type}: {e}")
 
+        logger.info(f"Ingestion run completed. Total records aggregated: {len(aggregated)}")
         return aggregated
 
 

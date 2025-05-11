@@ -7,11 +7,19 @@ from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 
+import platform
+import asyncio
+
+if platform.system() == "Windows":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 import models
 import stores
 import services
+from log.log_stream import router as log_stream_router
 
 app = FastAPI(title="Data Integration Pipeline API")
+app.include_router(log_stream_router)
 
 
 @app.post(
@@ -138,3 +146,22 @@ def get_run_results(pipeline_id: UUID, run_id: UUID) -> List[Dict[str, Any]]:
         )
 
     return run.results or []
+
+
+# Dedicated endpoint to retrieve the error message for a failed run
+@app.get(
+    "/pipelines/{pipeline_id}/runs/{run_id}/error",
+    response_model=str,
+    summary="Get run error message"
+)
+def get_run_error(pipeline_id: UUID, run_id: UUID) -> str:
+    """
+    Retrieve the error message for a run that failed.
+    """
+    pipeline = stores.get_pipeline(pipeline_id)
+    if not pipeline:
+        raise HTTPException(status_code=404, detail="Pipeline not found")
+    run = stores.get_run(run_id)
+    if not run or run.pipeline_id != pipeline_id:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return run.error or ""

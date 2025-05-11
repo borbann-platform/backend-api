@@ -10,6 +10,7 @@ import stores
 import models
 from ingestion.ingestor import Ingestor
 from normalization.normalizer import Normalizer
+from log.logging_utils import setup_run_logging, cleanup_run_logging, pipeline_log
 
 
 def execute_pipeline(pipeline: models.Pipeline, run_id: UUID) -> None:
@@ -24,13 +25,19 @@ def execute_pipeline(pipeline: models.Pipeline, run_id: UUID) -> None:
     if not run:
         return
 
+    # Setup structured per-run logging
+    setup_run_logging(str(pipeline.id), str(run_id))
+    pipeline_log("INFO", "Pipeline run starting", str(pipeline.id), str(run_id), status="RUNNING")
+
     # Mark as running
     run.status = 'RUNNING'
     run.started_at = datetime.utcnow()
 
     try:
         # Ingest raw records
+        pipeline_log("INFO", "Ingesting raw records", str(pipeline.id), str(run_id))
         raw_records: List[Dict[str, Any]] = Ingestor.run(pipeline.sources)
+        pipeline_log("INFO", f"Ingested {len(raw_records)} records", str(pipeline.id), str(run_id))
 
         # Normalize records
         normalizer = Normalizer()
@@ -39,6 +46,7 @@ def execute_pipeline(pipeline: models.Pipeline, run_id: UUID) -> None:
             source_type = raw.get('source_type')
             source = raw.get('source')
             if not source_type or not source:
+                pipeline_log("ERROR", "Record missing 'source_type' or 'source'", str(pipeline.id), str(run_id), status="FAILED")
                 raise ValueError("Record missing 'source_type' or 'source'.")
             norm = normalizer.normalize([raw], source_type, source)
             canonical.extend(norm)
@@ -47,9 +55,14 @@ def execute_pipeline(pipeline: models.Pipeline, run_id: UUID) -> None:
         run.status = 'COMPLETED'
         run.finished_at = datetime.utcnow()
         run.results = canonical
+        pipeline_log("SUCCESS", f"Pipeline run completed with {len(canonical)} records", str(pipeline.id), str(run_id), status="COMPLETED")
 
     except Exception as e:
-        # Failure
+        # Log failure with stack trace
+        pipeline_log("ERROR", f"Pipeline run failed: {e}", str(pipeline.id), str(run_id), status="FAILED", error=str(e))
         run.status = 'FAILED'
         run.finished_at = datetime.utcnow()
         run.error = str(e)
+    finally:
+        pipeline_log("INFO", "Pipeline run finished", str(pipeline.id), str(run_id), status=run.status)
+        cleanup_run_logging(str(run_id))
