@@ -10,23 +10,22 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks
 import platform
 import asyncio
 
+# set this so crawl4ai can work in windows
 if platform.system() == "Windows":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 import models
 import stores
 import services
-from log.log_stream import router as log_stream_router
 
 app = FastAPI(title="Data Integration Pipeline API")
-app.include_router(log_stream_router)
 
 
 @app.post(
     "/pipelines",
     response_model=models.Pipeline,
     status_code=201,
-    summary="Create a new pipeline"
+    summary="Create a new pipeline",
 )
 def create_pipeline(pipeline_in: models.PipelineCreate) -> models.Pipeline:
     """
@@ -36,9 +35,7 @@ def create_pipeline(pipeline_in: models.PipelineCreate) -> models.Pipeline:
 
 
 @app.get(
-    "/pipelines",
-    response_model=List[models.Pipeline],
-    summary="List all pipelines"
+    "/pipelines", response_model=List[models.Pipeline], summary="List all pipelines"
 )
 def list_pipelines() -> List[models.Pipeline]:
     """
@@ -50,7 +47,7 @@ def list_pipelines() -> List[models.Pipeline]:
 @app.get(
     "/pipelines/{pipeline_id}",
     response_model=models.Pipeline,
-    summary="Get a pipeline by ID"
+    summary="Get a pipeline by ID",
 )
 def get_pipeline(pipeline_id: UUID) -> models.Pipeline:
     """
@@ -66,12 +63,9 @@ def get_pipeline(pipeline_id: UUID) -> models.Pipeline:
     "/pipelines/{pipeline_id}/run",
     response_model=models.Run,
     status_code=201,
-    summary="Trigger a pipeline run"
+    summary="Trigger a pipeline run",
 )
-def run_pipeline(
-    pipeline_id: UUID,
-    background_tasks: BackgroundTasks
-) -> models.Run:
+def run_pipeline(pipeline_id: UUID, background_tasks: BackgroundTasks) -> models.Run:
     """
     Start a new run for the given pipeline. Runs asynchronously.
     """
@@ -87,7 +81,7 @@ def run_pipeline(
 @app.get(
     "/pipelines/{pipeline_id}/runs",
     response_model=List[models.Run],
-    summary="List runs for a pipeline"
+    summary="List runs for a pipeline",
 )
 def list_runs(pipeline_id: UUID) -> List[models.Run]:
     """
@@ -99,13 +93,13 @@ def list_runs(pipeline_id: UUID) -> List[models.Run]:
 
     runs = stores.list_runs_for_pipeline(pipeline_id)
     # Return only the Run fields (omit results/error)
-    return [models.Run(**r.dict()) for r in runs]
+    return [models.Run(**r.model_dump()) for r in runs]
 
 
 @app.get(
     "/pipelines/{pipeline_id}/runs/{run_id}",
     response_model=models.Run,
-    summary="Get run status"
+    summary="Get run status",
 )
 def get_run(pipeline_id: UUID, run_id: UUID) -> models.Run:
     """
@@ -119,13 +113,13 @@ def get_run(pipeline_id: UUID, run_id: UUID) -> models.Run:
     if not run or run.pipeline_id != pipeline_id:
         raise HTTPException(status_code=404, detail="Run not found")
 
-    return models.Run(**run.dict())
+    return models.Run(**run.model_dump())
 
 
 @app.get(
     "/pipelines/{pipeline_id}/runs/{run_id}/results",
     response_model=List[Dict[str, Any]],
-    summary="Get run results"
+    summary="Get run results",
 )
 def get_run_results(pipeline_id: UUID, run_id: UUID) -> List[Dict[str, Any]]:
     """
@@ -139,29 +133,7 @@ def get_run_results(pipeline_id: UUID, run_id: UUID) -> List[Dict[str, Any]]:
     if not run or run.pipeline_id != pipeline_id:
         raise HTTPException(status_code=404, detail="Run not found")
 
-    if run.status != 'COMPLETED':
-        raise HTTPException(
-            status_code=409,
-            detail="Run not completed or has failed"
-        )
+    if run.status != "COMPLETED":
+        raise HTTPException(status_code=409, detail="Run not completed or has failed")
 
     return run.results or []
-
-
-# Dedicated endpoint to retrieve the error message for a failed run
-@app.get(
-    "/pipelines/{pipeline_id}/runs/{run_id}/error",
-    response_model=str,
-    summary="Get run error message"
-)
-def get_run_error(pipeline_id: UUID, run_id: UUID) -> str:
-    """
-    Retrieve the error message for a run that failed.
-    """
-    pipeline = stores.get_pipeline(pipeline_id)
-    if not pipeline:
-        raise HTTPException(status_code=404, detail="Pipeline not found")
-    run = stores.get_run(run_id)
-    if not run or run.pipeline_id != pipeline_id:
-        raise HTTPException(status_code=404, detail="Run not found")
-    return run.error or ""
