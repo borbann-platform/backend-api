@@ -1,0 +1,28 @@
+{
+  "name": "Demo Data Pipeline",
+  "sources": [
+    {
+      "type": "api",
+      "config": {
+        "url": "https://dummyjson.com/posts"
+      }
+    },
+    {
+      "type": "scrape",
+      "config": {
+        "urls": [
+          "https://www.thairath.co.th/home",
+          "https://www.thaipbs.or.th/news"
+        ],
+        "prompt": "Extract all post in the pages along with its brief details and url"
+      }
+    },
+    {
+      "type": "file",
+      "config": {
+        "path": "/data/sample.json",
+        "format": "json"
+      }
+    }
+  ]
+}
