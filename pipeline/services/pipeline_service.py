@@ -8,6 +8,8 @@ from uuid import UUID, uuid4
 from typing import Optional, List, TYPE_CHECKING
 from loguru import logger
 
+from ingestion import Ingestor
+
 from models.pipeline import (
     Pipeline,
     PipelineCreate,
@@ -240,142 +242,122 @@ class PipelineService:
     async def run_pipeline(self, pipeline_id: UUID) -> None:
         """
         Executes the pipeline logic, updating status and run times.
-        This is called by the scheduler job or manual trigger.
+        Logs associated with this run will include the pipeline_id.
         """
-        logger.info(f"Attempting run execution for pipeline: id={pipeline_id}")
-        pipeline = await self.store.get(pipeline_id)
+        # Use contextualize to tag logs originating from this specific run
+        with logger.contextualize(
+            pipeline_id=str(pipeline_id)
+        ):  # Ensure it's a string for context
+            logger.info(
+                "Attempting run execution for pipeline"
+            )  # Log context takes effect here
+            pipeline = await self.store.get(pipeline_id)
 
-        if not pipeline:
-            logger.error(f"Cannot run pipeline: Pipeline not found (id={pipeline_id})")
-            return
-        # NOTE: lock mechanism
-        if pipeline.status == PipelineStatus.ACTIVE:
-            logger.warning(
-                f"Pipeline id={pipeline_id} is already ACTIVE. Skipping run."
-            )
-            return
-
-        # --- Mark as ACTIVE ---
-        try:
-            pipeline.status = PipelineStatus.ACTIVE
-            pipeline.updated_at = datetime.now(UTC)  # Update timestamp
-            await self.store.save(pipeline)
-            logger.info(f"Pipeline {pipeline_id} marked as ACTIVE.")
-        except Exception as e:
-            logger.error(
-                f"Failed to mark pipeline {pipeline_id} as ACTIVE: {e}. Aborting run.",
-                exc_info=True,
-            )
-            # Attempt to restore status? Depends on store guarantees.
-            # pipeline.status = original_status # Potentially try rollback
-            return  # Abort run
-
-        # --- Execute Pipeline Logic ---
-        run_successful = False
-        try:
-            logger.info(f"Executing core logic for pipeline id={pipeline_id}...")
-            # ---------------------------------------------------
-            # Ensure _execute_ingestion is awaited if it's async
-            await self._execute_ingestion(pipeline.config.ingestor_config)
-            # ---------------------------------------------------
-            logger.info(f"Core logic finished successfully for id={pipeline_id}.")
-            run_successful = True
-
-        except Exception as e:
-            logger.error(
-                f"Core logic failed during pipeline run id={pipeline_id}: {e}",
-                exc_info=True,
-            )
-            # run_successful remains False
-
-        # --- Update Final State ---
-        try:
-            # Fetch the latest state again to minimize race conditions, though the ACTIVE lock helps
-            final_pipeline_state = await self.store.get(pipeline_id)
-            if not final_pipeline_state:
-                logger.warning(
-                    f"Pipeline {pipeline_id} disappeared during run. Cannot update final state."
-                )
-                # The pipeline might have been deleted externally while running.
-                # Scheduler might need cleanup if the job still exists.
-                if self.scheduler_manager:
-                    logger.warning(
-                        f"Attempting to unschedule potentially orphaned job for {pipeline_id}"
-                    )
-                    asyncio.create_task(
-                        self.scheduler_manager.unschedule_pipeline(pipeline_id)
-                    )
+            if not pipeline:
+                logger.error("Cannot run pipeline: Pipeline not found")
+                return
+            if pipeline.status == PipelineStatus.ACTIVE:
+                logger.warning("Pipeline is already ACTIVE. Skipping run.")
                 return
 
-            # Avoid modifying the object fetched directly if store uses caching/references
-            final_pipeline_state = final_pipeline_state.model_copy(deep=True)
+            # --- Mark as ACTIVE ---
+            # original_status = pipeline.status # Store original status for potential rollback
+            try:
+                pipeline.status = PipelineStatus.ACTIVE
+                pipeline.updated_at = datetime.now(UTC)
+                await self.store.save(pipeline)
+                logger.info("Pipeline marked as ACTIVE.")
+            except Exception as e:
+                logger.error(
+                    f"Failed to mark pipeline as ACTIVE: {e}. Aborting run.",
+                    exc_info=True,
+                )
+                # Attempt to restore status? Requires careful thought on atomicity
+                # pipeline.status = original_status
+                # await self.store.save(pipeline) # Potential race condition/overwrite here
+                return
 
-            now = datetime.now(UTC)
-            final_pipeline_state.status = (
-                PipelineStatus.INACTIVE if run_successful else PipelineStatus.FAILED
-            )
+            # --- Execute Pipeline Logic ---
+            run_successful = False
+            try:
+                logger.info("Executing core logic...")
+                # This call and anything within it will inherit the pipeline_id context
+                await self._execute_ingestion(pipeline.config.ingestor_config)
+                logger.info("Core logic finished successfully.")
+                run_successful = True
+            except Exception as e:
+                logger.error(
+                    f"Core logic failed during pipeline run: {e}", exc_info=True
+                )
+                # run_successful remains False
 
-            if run_successful:
-                final_pipeline_state.config.last_run = (
-                    now  # Mark completion time on success
+            # --- Update Final State ---
+            try:
+                # Fetch latest state again (important if external changes possible)
+                final_pipeline_state = await self.store.get(pipeline_id)
+                if not final_pipeline_state:
+                    logger.warning(
+                        "Pipeline disappeared during run. Cannot update final state."
+                    )
+                    # Handle potential deletion during run (e.g., unschedule if needed)
+                    if self.scheduler_manager:
+                        logger.warning(
+                            "Attempting to unschedule potentially orphaned job"
+                        )
+                        asyncio.create_task(
+                            self.scheduler_manager.unschedule_pipeline(pipeline_id)
+                        )
+                    return
+
+                final_pipeline_state = final_pipeline_state.model_copy(deep=True)
+                now = datetime.now(UTC)
+                final_pipeline_state.status = (
+                    PipelineStatus.INACTIVE if run_successful else PipelineStatus.FAILED
                 )
 
-            # Calculate and store the *next* run time based on the outcome
-            # Use the *updated* last_run if the run was successful
-            current_last_run = (
-                final_pipeline_state.config.last_run
-            )  # This is 'now' if successful, else original last_run
-            final_pipeline_state.config.next_run = calculate_next_run(
-                frequency=final_pipeline_state.config.run_frequency,
-                last_run=current_last_run,  # Use the relevant last_run for calculation
-                start_reference_time=now,  # Use current time as reference for calculation
-            )
+                if run_successful:
+                    final_pipeline_state.config.last_run = now
 
-            final_pipeline_state.updated_at = (
-                now  # Update timestamp for this final save
-            )
-
-            await self.store.save(final_pipeline_state)
-            logger.info(
-                f"Pipeline {pipeline_id} run finished. Status: {final_pipeline_state.status}, Last Run: {final_pipeline_state.config.last_run}, Next Run: {final_pipeline_state.config.next_run}"
-            )
-
-            # Notify scheduler about the *new* next run time so it can reschedule accurately
-            if self.scheduler_manager:
-                logger.debug(
-                    f"Notifying scheduler to reschedule pipeline {pipeline_id} after run completion with next run {final_pipeline_state.config.next_run}."
+                current_last_run = final_pipeline_state.config.last_run
+                final_pipeline_state.config.next_run = calculate_next_run(
+                    frequency=final_pipeline_state.config.run_frequency,
+                    last_run=current_last_run,
+                    start_reference_time=now,
                 )
-                asyncio.create_task(
-                    self.scheduler_manager.reschedule_pipeline(final_pipeline_state)
+                final_pipeline_state.updated_at = now
+
+                await self.store.save(final_pipeline_state)
+                logger.info(
+                    f"Pipeline run finished. Status: {final_pipeline_state.status}, Last Run: {final_pipeline_state.config.last_run}, Next Run: {final_pipeline_state.config.next_run}"
                 )
 
-        except Exception as e:
-            logger.error(
-                f"Failed to update pipeline {pipeline_id} state after run execution: {e}",
-                exc_info=True,
-            )
-            # The pipeline might be left in ACTIVE or an inconsistent state.
-            # Consider adding monitoring or retry logic here.
+                if self.scheduler_manager:
+                    logger.debug(
+                        "Notifying scheduler to reschedule pipeline after run completion"
+                    )
+                    asyncio.create_task(
+                        self.scheduler_manager.reschedule_pipeline(final_pipeline_state)
+                    )
+
+            except Exception as e:
+                logger.error(
+                    f"Failed to update pipeline state after run execution: {e}",
+                    exc_info=True,
+                )
+                # Pipeline might be left ACTIVE or FAILED state might not be saved. Needs monitoring.
 
     async def _execute_ingestion(self, config: IngestorInput):
         """
         Executes the ingestion process for a pipeline using the provided IngestorInput config.
         Returns the ingestion results or raises an exception on failure.
         """
-        # Ensure Ingestor is imported locally or globally if needed
-        # from ingestion.core import Ingestor # Example import if needed
-
-        # Check if Ingestor is already available (e.g., imported at module level)
-        # If not, uncomment the import above or ensure it's accessible.
-        # Assuming Ingestor is available in the scope:
         try:
-            # Avoid circular import
-            from ingestion.core import Ingestor
-
+            # from ..ingestion import Ingestor
             logger.info(f"Executing ingestion with config: {config}")
-            # NOTE: Can be async
             results = Ingestor.run(config.sources)
-            logger.info(f"Ingestion completed successfully. Results: {results}")
+            logger.info(
+                f"Ingestion completed successfully. Results count: {len(results.records)}"
+            )
             return results
         except ImportError:
             logger.error("Failed to import Ingestor. Cannot execute ingestion.")

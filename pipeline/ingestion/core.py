@@ -1,4 +1,8 @@
-from ingestors import IngestionMethod, SimpleIngestionStrategy, MLIngestionStrategy
+from ingestion.ingestors import (
+    IngestionMethod,
+    SimpleIngestionStrategy,
+    MLIngestionStrategy,
+)
 from models.ingestion import IngestSourceConfig, OutputData
 
 

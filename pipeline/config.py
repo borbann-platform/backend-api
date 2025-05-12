@@ -19,7 +19,7 @@ class AppSettings(BaseSettings):
 
     # Application settings
     APP_NAME: str = "PipelineRunnerApp"
-    LOG_LEVEL: str = "INFO"  # Logging level (e.g., DEBUG, INFO, WARNING)
+    LOG_LEVEL: str = "DEBUG"  # Logging level (e.g., DEBUG, INFO, WARNING)
     LOG_ENABLE_SSE: bool = True  # Flag to enable/disable SSE log streaming sink
 
     # Store configuration
@@ -56,7 +56,8 @@ logger.remove()
 logger.add(
     sys.stderr,
     level=settings.LOG_LEVEL.upper(),
-    format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
+    # format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
+    colorize=True,
 )
 
 # File Sink
