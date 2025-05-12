@@ -1,139 +1,76 @@
-"""
-FastAPI service for managing and running data integration pipelines.
-"""
-
-from typing import List, Dict, Any
-from uuid import UUID
-
-from fastapi import FastAPI, HTTPException, BackgroundTasks
-
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
 import platform
 import asyncio
+from loguru import logger
 
-# set this so crawl4ai can work in windows
+from stores.memory import InMemoryPipelineStore
+from stores.base import PipelineStore
+from services.pipeline_service import PipelineService
+from scheduler.manager import SchedulerManager
+from routers.pipelines import router as pipelines_router
+
+# ! Window specific asyncio policy
 if platform.system() == "Windows":
+    logger.info("Setting WindowsProactorEventLoopPolicy for asyncio.")
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
-import models
-import stores
-import services
+# --- Resource Initialization ---
+pipeline_store: PipelineStore = InMemoryPipelineStore()
+pipeline_service = PipelineService(store=pipeline_store)
+scheduler_manager = SchedulerManager(pipeline_service=pipeline_service)
 
-app = FastAPI(title="Data Integration Pipeline API")
+# to avoid circular import
+pipeline_service.set_scheduler_manager(scheduler_manager)
 
 
-@app.post(
-    "/pipelines",
-    response_model=models.Pipeline,
-    status_code=201,
-    summary="Create a new pipeline",
+# --- Lifespan Management (for startup/shutdown) ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Application startup...")
+    # Store instances in app state for dependency injection
+    app.state.pipeline_store = pipeline_store
+    app.state.scheduler_manager = scheduler_manager
+    app.state.pipeline_service = pipeline_service
+
+    # Initialize and start the scheduler
+    logger.info("Initializing and starting SchedulerManager...")
+
+    scheduler_manager.start()
+    logger.info("SchedulerManager started.")
+
+    yield
+
+    # --- Shutdown ---
+    logger.info("Application shutdown...")
+    logger.info("Shutting down SchedulerManager...")
+    scheduler_manager.stop()
+    logger.info("SchedulerManager stopped.")
+    logger.info("Cleanup complete.")
+
+
+# --- FastAPI App ---
+app = FastAPI(
+    title="Data Integration Pipeline API",
+    description="API for managing and running data integration pipelines.",
+    version="0.1.0",
+    lifespan=lifespan,
 )
-def create_pipeline(pipeline_in: models.PipelineCreate) -> models.Pipeline:
-    """
-    Register a new pipeline with sources configuration.
-    """
-    return stores.create_pipeline(pipeline_in)
+
+# Include the pipelines router
+app.include_router(pipelines_router)
 
 
-@app.get(
-    "/pipelines", response_model=List[models.Pipeline], summary="List all pipelines"
-)
-def list_pipelines() -> List[models.Pipeline]:
-    """
-    Retrieve all registered pipelines.
-    """
-    return stores.list_pipelines()
+# --- Root Endpoint (Optional) ---
+@app.get("/", tags=["Root"])
+async def read_root():
+    return {"message": "Welcome to the Data Integration Pipeline API"}
 
 
-@app.get(
-    "/pipelines/{pipeline_id}",
-    response_model=models.Pipeline,
-    summary="Get a pipeline by ID",
-)
-def get_pipeline(pipeline_id: UUID) -> models.Pipeline:
-    """
-    Fetch details of a specific pipeline.
-    """
-    pipeline = stores.get_pipeline(pipeline_id)
-    if not pipeline:
-        raise HTTPException(status_code=404, detail="Pipeline not found")
-    return pipeline
+# --- Run with Uvicorn (Example) ---
+if __name__ == "__main__":
+    import uvicorn
 
-
-@app.post(
-    "/pipelines/{pipeline_id}/run",
-    response_model=models.Run,
-    status_code=201,
-    summary="Trigger a pipeline run",
-)
-def run_pipeline(pipeline_id: UUID, background_tasks: BackgroundTasks) -> models.Run:
-    """
-    Start a new run for the given pipeline. Runs asynchronously.
-    """
-    pipeline = stores.get_pipeline(pipeline_id)
-    if not pipeline:
-        raise HTTPException(status_code=404, detail="Pipeline not found")
-
-    run = stores.create_run(pipeline_id)
-    background_tasks.add_task(services.execute_pipeline, pipeline, run.id)
-    return run
-
-
-@app.get(
-    "/pipelines/{pipeline_id}/runs",
-    response_model=List[models.Run],
-    summary="List runs for a pipeline",
-)
-def list_runs(pipeline_id: UUID) -> List[models.Run]:
-    """
-    List all runs associated with a pipeline.
-    """
-    pipeline = stores.get_pipeline(pipeline_id)
-    if not pipeline:
-        raise HTTPException(status_code=404, detail="Pipeline not found")
-
-    runs = stores.list_runs_for_pipeline(pipeline_id)
-    # Return only the Run fields (omit results/error)
-    return [models.Run(**r.model_dump()) for r in runs]
-
-
-@app.get(
-    "/pipelines/{pipeline_id}/runs/{run_id}",
-    response_model=models.Run,
-    summary="Get run status",
-)
-def get_run(pipeline_id: UUID, run_id: UUID) -> models.Run:
-    """
-    Retrieve the status of a specific run.
-    """
-    pipeline = stores.get_pipeline(pipeline_id)
-    if not pipeline:
-        raise HTTPException(status_code=404, detail="Pipeline not found")
-
-    run = stores.get_run(run_id)
-    if not run or run.pipeline_id != pipeline_id:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    return models.Run(**run.model_dump())
-
-
-@app.get(
-    "/pipelines/{pipeline_id}/runs/{run_id}/results",
-    response_model=List[Dict[str, Any]],
-    summary="Get run results",
-)
-def get_run_results(pipeline_id: UUID, run_id: UUID) -> List[Dict[str, Any]]:
-    """
-    Retrieve normalized results of a completed run.
-    """
-    pipeline = stores.get_pipeline(pipeline_id)
-    if not pipeline:
-        raise HTTPException(status_code=404, detail="Pipeline not found")
-
-    run = stores.get_run(run_id)
-    if not run or run.pipeline_id != pipeline_id:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    if run.status != "COMPLETED":
-        raise HTTPException(status_code=409, detail="Run not completed or has failed")
-
-    return run.results or []
+    logger.info("Starting Uvicorn server...")
+    # ! use reload=True only for development
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, loop="asyncio")
