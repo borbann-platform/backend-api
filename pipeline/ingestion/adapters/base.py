@@ -2,7 +2,8 @@
 Define the DataSourceAdapter protocol for ingestion adapters.
 """
 
-from typing import Protocol, List, Dict, Any
+from typing import Protocol
+from models.adapters import AdapterRecord
 
 
 class DataSourceAdapter(Protocol):
@@ -10,7 +11,7 @@ class DataSourceAdapter(Protocol):
     Protocol for data source adapters.
     """
 
-    def fetch(self) -> List[Dict[str, Any]]:
+    def fetch(self) -> list[AdapterRecord]:
         """
         Fetch data from the source.
 

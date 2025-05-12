@@ -2,11 +2,11 @@
 API adapter to fetch JSON data from HTTP endpoints.
 """
 
-from typing import Any
-
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+from models.adapters import AdapterRecord
 
 from .base import DataSourceAdapter
 from loguru import logger
@@ -58,7 +58,7 @@ class ApiAdapter(DataSourceAdapter):
         logger.debug("HTTP session initialized with retry strategy.")
         return session
 
-    def fetch(self) -> list[dict[str, Any]]:
+    def fetch(self) -> list[AdapterRecord]:
         """
         Perform a GET request and return JSON data as a list of records.
 
@@ -87,8 +87,8 @@ class ApiAdapter(DataSourceAdapter):
             raise RuntimeError(f"Failed to parse JSON response: {e}")
 
         if isinstance(data, list):
-            return data
+            return [AdapterRecord(source=self.url, data=item) for item in data]
         if isinstance(data, dict):
-            return [data]
+            return [AdapterRecord(source=self.url, data=data)]
         logger.error("Unexpected JSON structure: expected list or dict.")
         raise RuntimeError("Unexpected JSON structure: expected list or dict.")

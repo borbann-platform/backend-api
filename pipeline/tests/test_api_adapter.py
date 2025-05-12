@@ -8,13 +8,16 @@ import httpx
 def single_product():
     return "https://dummyjson.com/products/1"
 
+
 @pytest.fixture
 def multiple_product():
     return "https://dummyjson.com/products"
 
+
 @pytest.fixture
 def auth_endpoint():
     return "https://dummyjson.com/auth/login"
+
 
 @pytest.fixture
 def auth_require_endpoint():
@@ -32,7 +35,7 @@ def test_fetch_dict_response(single_product):
     adapter_result = adapter.fetch()
 
     assert isinstance(adapter_result, list)
-    assert adapter_result[0] == expected_data
+    assert adapter_result[0].data == expected_data
 
 
 def test_fetch_list_response(multiple_product):
@@ -44,7 +47,7 @@ def test_fetch_list_response(multiple_product):
     adapter = ApiAdapter(url=multiple_product)
     adapter_result = adapter.fetch()
 
-    assert adapter_result[0] == expected_data
+    assert adapter_result[0].data == expected_data
 
 
 @responses.activate
@@ -59,6 +62,7 @@ def test_fetch_http_error(single_product):
         adapter.fetch()
 
     assert "API request failed" in str(exc_info.value)
+
 
 @responses.activate
 def test_fetch_json_decode_error(single_product):
@@ -75,17 +79,13 @@ def test_fetch_json_decode_error(single_product):
 
 def test_token_header_injection(auth_endpoint, auth_require_endpoint):
     """Test that the token is injected into the Authorization header."""
-    payload = {
-        "username": "emilys",
-        "password": "emilyspass",
-        "expiresInMins": 30
-    }
+    payload = {"username": "emilys", "password": "emilyspass", "expiresInMins": 30}
 
     response = httpx.post(
         auth_endpoint,
         timeout=10,
         headers={"Content-Type": "application/json"},
-        json=payload
+        json=payload,
     )
 
     response.raise_for_status()
@@ -98,7 +98,7 @@ def test_token_header_injection(auth_endpoint, auth_require_endpoint):
     adapter_result = adapter.fetch()
 
     assert isinstance(adapter_result, list)
-    assert adapter_result[0].get("username") == "emilys"
+    assert adapter_result[0].data.get("username") == "emilys"
 
 
 def test_custom_headers_are_used(single_product):
