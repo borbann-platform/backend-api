@@ -9,6 +9,7 @@ from fastapi import (
 )
 
 from models.pipeline import Pipeline, PipelineCreate, PipelineStatus
+from models.ingestion import OutputData
 from services.pipeline_service import PipelineService
 from dependencies import (
     get_pipeline_service,
@@ -198,3 +199,31 @@ async def run_pipeline_manually(
     background_tasks.add_task(service.run_pipeline, pipeline_id=pipeline_id)
 
     return {"detail": f"Pipeline run triggered for {pipeline_id}"}
+
+
+@router.get(
+    "/{pipeline_id}/results",
+    response_model=OutputData | None,
+    summary="Get latest run results for a pipeline",
+    description="Retrieves the aggregated data output from the last successful run of the specified pipeline.",
+)
+async def get_pipeline_results(
+    pipeline_id: UUID,
+    service: PipelineService = Depends(get_pipeline_service),
+) -> OutputData | None:
+    """
+    Fetches the results of the last successful run for the given pipeline_id.
+    Returns null or an empty structure if no successful run with output is found.
+    """
+    results = await service.get_pipeline_latest_results(pipeline_id)
+
+    if results is None:
+        pipeline_exists = await service.get_pipeline(pipeline_id)
+        if not pipeline_exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Pipeline with id {pipeline_id} not found.",
+            )
+        return None
+
+    return results

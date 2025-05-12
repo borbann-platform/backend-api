@@ -17,7 +17,7 @@ from models.pipeline import (
     RunFrequency,
     PipelineStatus,
 )
-from models.ingestion import IngestorInput
+from models.ingestion import IngestorInput, OutputData
 from stores.base import PipelineStore
 from scheduler.utils import calculate_next_run, UTC
 
@@ -279,10 +279,13 @@ class PipelineService:
 
             # --- Execute Pipeline Logic ---
             run_successful = False
+            ingestion_output: OutputData | None = None
             try:
                 logger.info("Executing core logic...")
                 # This call and anything within it will inherit the pipeline_id context
-                await self._execute_ingestion(pipeline.config.ingestor_config)
+                ingestion_output = await self._execute_ingestion(
+                    pipeline.config.ingestor_config
+                )
                 logger.info("Core logic finished successfully.")
                 run_successful = True
             except Exception as e:
@@ -317,6 +320,15 @@ class PipelineService:
 
                 if run_successful:
                     final_pipeline_state.config.last_run = now
+                    if ingestion_output:
+                        final_pipeline_state.latest_run_output = ingestion_output
+                    else:
+                        logger.warning(
+                            "Run was successful but no ingestion output captured."
+                        )
+                        final_pipeline_state.latest_run_output = None
+                else:
+                    logger.warning("Run failed.")
 
                 current_last_run = final_pipeline_state.config.last_run
                 final_pipeline_state.config.next_run = calculate_next_run(
@@ -346,17 +358,16 @@ class PipelineService:
                 )
                 # Pipeline might be left ACTIVE or FAILED state might not be saved. Needs monitoring.
 
-    async def _execute_ingestion(self, config: IngestorInput):
+    async def _execute_ingestion(self, config: IngestorInput) -> OutputData | None:
         """
         Executes the ingestion process for a pipeline using the provided IngestorInput config.
         Returns the ingestion results or raises an exception on failure.
         """
         try:
-            # from ..ingestion import Ingestor
             logger.info(f"Executing ingestion with config: {config}")
-            results = Ingestor.run(config.sources)
+            results: OutputData = Ingestor.run(config.sources)
             logger.info(
-                f"Ingestion completed successfully. Results count: {len(results.records)}"
+                f"Ingestion completed successfully. Records count: {len(results.records)}"
             )
             return results
         except ImportError:
@@ -364,4 +375,25 @@ class PipelineService:
             raise RuntimeError("Ingestion module not found")
         except Exception as e:
             logger.error(f"Ingestion execution failed: {e}", exc_info=True)
-            raise
+        raise
+
+    async def get_pipeline_latest_results(
+        self, pipeline_id: UUID
+    ) -> Optional[OutputData]:
+        """Retrieves the output from the latest successful run of a pipeline."""
+        logger.debug(f"Getting latest results for pipeline: id={pipeline_id}")
+        pipeline = await self.store.get(pipeline_id)
+        if pipeline:
+            if pipeline.latest_run_output and pipeline.config.last_run:
+                # NOTE: can use PipelineRunResult
+                return pipeline.latest_run_output
+            elif pipeline.config.last_run:
+                logger.info(
+                    f"Pipeline {pipeline_id} ran at {pipeline.config.last_run} but has no stored output (or run failed)."
+                )
+                return None
+            else:
+                logger.info(f"Pipeline {pipeline_id} has no recorded run or output.")
+                return None
+        logger.warning(f"Pipeline {pipeline_id} not found when retrieving results.")
+        return None

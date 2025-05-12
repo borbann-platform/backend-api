@@ -3,7 +3,7 @@ import enum
 from uuid import UUID
 from pydantic import BaseModel, Field
 
-from models.ingestion import IngestorInput
+from models.ingestion import IngestorInput, OutputData
 
 
 class PipelineStatus(str, enum.Enum):
@@ -33,6 +33,9 @@ class Pipeline(BaseModel):
     status: PipelineStatus = Field(default=PipelineStatus.INACTIVE)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    latest_run_output: OutputData | None = Field(
+        default=None, description="Output of the last successful run"
+    )
 
 
 class PipelineCreate(BaseModel):
