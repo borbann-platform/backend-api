@@ -1,5 +1,10 @@
+import enum
 from typing import Any
+from fastapi import UploadFile
 from pydantic import BaseModel, Field
+
+
+# ------ Adapter Model ------
 
 
 class AdapterRecord(BaseModel):
@@ -23,3 +28,60 @@ class OutputData(BaseModel):
     metadata: dict[str, Any] | None = Field(
         default=None, description="Metadata about the run"
     )
+
+
+# ------------------------------------
+
+# ------ Ingestor Model ------
+
+
+class SourceType(str, enum.Enum):
+    API = "api"
+    FILE = "file"
+    SCRAPE = "scrape"
+
+
+class ApiConfig(BaseModel):
+    url: str
+    headers: dict[str, str] | None = None
+    timeout: int | None = None
+    token: str | None = None
+
+
+class FileConfig(BaseModel):
+    upload: UploadFile
+
+
+class ScrapeConfig(BaseModel):
+    urls: list[str]
+    api_key: str
+    schema_file: str | None = None
+    prompt: str | None = None
+    llm_provider: str | None = None
+    output_format: str | None = None
+    verbose: bool | None = None
+    cache_mode: str | None = None
+
+
+class IngestSourceConfig(BaseModel):
+    """
+    Configuration for a single ingestion source, to be used by the Ingestor.
+    The 'type' field selects the adapter ('api', 'file', or 'scrape').
+    The 'config' field contains the adapter-specific configuration.
+    """
+
+    type: SourceType = Field(..., description="Source type: 'api', 'file', or 'scrape'")
+    config: ApiConfig | FileConfig | ScrapeConfig = Field(
+        ..., description="Configuration for the adapter"
+    )
+
+
+class IngestorInput(BaseModel):
+    """
+    Input for the ingestor.
+    """
+
+    sources: list[IngestSourceConfig]
+
+
+# ------------------------------------
