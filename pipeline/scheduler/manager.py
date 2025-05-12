@@ -13,6 +13,8 @@ from apscheduler.executors.asyncio import AsyncIOExecutor
 from apscheduler.job import Job
 from apscheduler.jobstores.base import JobLookupError
 
+from config import settings
+
 from loguru import logger
 
 from models.pipeline import Pipeline, PipelineStatus
@@ -27,18 +29,19 @@ class SchedulerManager:
     def __init__(
         self,
         pipeline_service: PipelineService,
-        check_interval_seconds: int = 60,
-        max_concurrent_runs: int = 5,
-        misfire_grace_sec: int = 300,
+        check_interval_seconds: int = settings.SCHEDULER_CHECK_INTERVAL,
+        max_concurrent_runs: int = settings.SCHEDULER_MAX_CONCURRENT_RUNS,
+        misfire_grace_sec: int = settings.SCHEDULER_MISFIRE_GRACE_SEC,
     ):
         self.pipeline_service = pipeline_service
         self.check_interval_seconds = check_interval_seconds
+        self.max_concurrent_runs = max_concurrent_runs
         self._scheduler: AsyncIOScheduler | None = None
         self._running = False
         self._discovery_job_id = "pipeline_discovery_job"
         self.misfire_grace_sec = misfire_grace_sec
 
-        # Configure APScheduler (same as before)
+        # Configure APScheduler
         jobstores = {"default": MemoryJobStore()}
         executors = {"default": AsyncIOExecutor()}
         job_defaults = {
@@ -52,10 +55,9 @@ class SchedulerManager:
             job_defaults=job_defaults,
             timezone=UTC,
         )
-        logger.info("APScheduler configured.")
-        # Link the scheduler back to the service *after* both are initialized
-        # This is often done in the main application setup
-        # self.pipeline_service.set_scheduler_manager(self)
+        logger.info(
+            f"APScheduler configured with misfire_grace_time: {self.misfire_grace_sec}s"
+        )
 
     async def schedule_pipeline(self, pipeline: Pipeline):
         """Adds or updates a job for a specific pipeline based on its next_run time."""
@@ -218,7 +220,6 @@ class SchedulerManager:
                 f"Error during pipeline discovery/reconciliation: {e}", exc_info=True
             )
 
-    # start() and stop() methods remain largely the same as before
     def start(self):
         """Starts the scheduler and the discovery job."""
         if not self._running and self._scheduler:

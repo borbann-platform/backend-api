@@ -1,85 +1,112 @@
-# config.py
-import os
-from dotenv import load_dotenv
-from pathlib import Path
-
-# Load environment variables from .env file located in the script's directory
-# Make sure .env is in the *same directory* as config.py
-dotenv_path = Path(__file__).parent / '.env'
-if dotenv_path.is_file():
-    load_dotenv(dotenv_path=dotenv_path)
-else:
-    print(f"Warning: .env file not found at {dotenv_path}")
+import asyncio
+import sys
+from enum import Enum
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from loguru import logger
 
 
-# --- Default Settings ---
-DEFAULT_OUTPUT_FILE = "extracted_data.json"
-DEFAULT_OUTPUT_FORMAT = "json"  # csv, json, sqlite
-DEFAULT_CACHE_MODE = "ENABLED"  # ENABLED, BYPASS, DISABLED, READ_ONLY, WRITE_ONLY
-DEFAULT_VERBOSE = False
-DEFAULT_LLM_PROVIDER = "openai/gpt-4o-mini"  # Default LLM
+class StoreType(str, Enum):
+    """Supported pipeline data store types."""
 
-# --- LLM Provider Configuration ---
-PROVIDER_ENV_MAP = {
-    "openai": "OPENAI_API_KEY",
-    "gemini": "GEMINI_API_KEY",
-    "groq": "GROQ_API_KEY",
-    "anthropic": "ANTHROPIC_API_KEY",
-    "ollama": None,  # Ollama typically doesn't require an API key
-    # Add other providers and their corresponding env variable names here
-}
+    MEMORY = "MEMORY"
 
 
-def get_api_key_env_name(provider: str) -> str | None:
-    """Gets the expected environment variable name for the given provider."""
-    provider_prefix = provider.split('/')[0].lower()
-    return PROVIDER_ENV_MAP.get(provider_prefix)
-
-
-def get_api_key(provider: str, direct_key: str | None = None, env_var_name: str | None = None) -> str | None:
+class AppSettings(BaseSettings):
     """
-    Retrieves the API key for a given provider.
-    Priority: direct_key > env_var_name > default env var from PROVIDER_ENV_MAP.
+    Central configuration settings for the application.
+    Loads values from environment variables or a .env file.
     """
-    if direct_key:
-        print(f"INFO: Using direct API key provided via --api-key for provider '{provider}'.")
-        return direct_key
 
-    if env_var_name:
-        key = os.getenv(env_var_name)
-        if key:
-            print(
-                f"INFO: Using API key from specified environment variable '{env_var_name}' for provider '{provider}'."
-            )
-            return key
-        else:
-            print(f"Warning: Specified environment variable '{env_var_name}' not found.")
+    # Application settings
+    APP_NAME: str = "PipelineRunnerApp"
+    LOG_LEVEL: str = "INFO"  # Logging level (e.g., DEBUG, INFO, WARNING)
+    LOG_ENABLE_SSE: bool = True  # Flag to enable/disable SSE log streaming sink
 
-    default_env_name = get_api_key_env_name(provider)
-    if default_env_name:
-        key = os.getenv(default_env_name)
-        if key:
-            print(
-                f"INFO: Using API key from default environment variable '{default_env_name}' for provider '{provider}'."
-            )
-            return key
-        else:
-            if default_env_name is not None:  # Don't warn if provider like Ollama has None mapping
-                print(
-                    f"Warning: Default environment variable '{default_env_name}' for provider '{provider}' not found."
-                )
-            return None
+    # Store configuration
+    STORE_TYPE: StoreType = StoreType.MEMORY
 
-    # If provider is not in map and no key was provided
-    # Allow providers like 'ollama' to proceed without a key
-    if provider.split('/')[0].lower() != "ollama":
-        print(f"Warning: No API key found or specified for provider '{provider}'. LLM features might fail.")
-    return None
+    # Scheduler configuration
+    SCHEDULER_CHECK_INTERVAL: int = 60  # Seconds between pipeline discovery checks
+    SCHEDULER_MAX_CONCURRENT_RUNS: int = 5  # Max concurrent pipeline runs via scheduler
+    SCHEDULER_MISFIRE_GRACE_SEC: int = 300  # Grace time for missed jobs (seconds)
+
+    # Ingestion Defaults
+    DEFAULT_API_TIMEOUT: int = 30
+    DEFAULT_SCRAPER_LLM_PROVIDER: str = "openai/gpt-4o-mini"
+    DEFAULT_SCRAPER_CACHE_MODE: str = "ENABLED"
+    DEFAULT_SCRAPER_PROMPT: str = (
+        "Extract all data from the page in as much detailed as possible"
+    )
+
+    # SSE Configuration
+    SSE_LOG_QUEUE_MAX_SIZE: int = 1000  # Max size for the SSE log queue
+
+    # Pydantic settings configuration
+    model_config = SettingsConfigDict(
+        env_file=".env",  # Load .env file if it exists
+        case_sensitive=False,  # Environment variables are case-insensitive
+        extra="ignore",  # Ignore extra fields from environment
+    )
 
 
-# --- Exportable Configuration Variables ---
-LLM_PROVIDER = os.getenv("DEFAULT_LLM_PROVIDER", DEFAULT_LLM_PROVIDER)
-OUTPUT_FILE = os.getenv("DEFAULT_OUTPUT_FILE", DEFAULT_OUTPUT_FILE)
-OUTPUT_FORMAT = os.getenv("DEFAULT_OUTPUT_FORMAT", DEFAULT_OUTPUT_FORMAT)
-CACHE_MODE = os.getenv("DEFAULT_CACHE_MODE", DEFAULT_CACHE_MODE)
-VERBOSE = os.getenv("DEFAULT_VERBOSE", str(DEFAULT_VERBOSE)).lower() in ('true', '1', 't')
+settings = AppSettings()
+
+# --- Basic Loguru Configuration ---
+logger.remove()
+logger.add(
+    sys.stderr,
+    level=settings.LOG_LEVEL.upper(),
+    format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
+)
+
+# File Sink
+logger.add(
+    "logs/app_{time}.log",
+    level=settings.LOG_LEVEL.upper(),
+    rotation="10 MB",  # Rotate log file when it reaches 10 MB
+    retention="7 days",  # Keep logs for 7 days
+    compression="zip",  # Compress rotated files
+    format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
+)
+
+logger.info("Logger configured with level: {}", settings.LOG_LEVEL)
+logger.info(
+    "Application settings loaded. Store type: {}, SSE Logging: {}",
+    settings.STORE_TYPE,
+    "Enabled" if settings.LOG_ENABLE_SSE else "Disabled",
+)
+
+# --------- SSE Log Queue ---------
+
+sse_log_queue = None
+
+
+def set_sse_log_queue(queue):
+    """Sets the global SSE log queue instance."""
+    global sse_log_queue
+    sse_log_queue = queue
+    if settings.LOG_ENABLE_SSE and queue:
+        logger.info("SSE Log Queue set and SSE sink enabled.")
+        logger.add(
+            sse_log_sink,
+            level=settings.LOG_LEVEL.upper(),
+            format="{message}",
+            enqueue=True,
+        )
+    elif settings.LOG_ENABLE_SSE and not queue:
+        logger.warning("SSE Log Queue is None, cannot enable SSE sink.")
+    else:
+        logger.info("SSE Logging is disabled by configuration.")
+
+
+def sse_log_sink(message):
+    """Loguru sink function to put messages onto the SSE queue."""
+    if sse_log_queue:
+        try:
+            record = message.record
+            log_entry = f"{record['time']:YYYY-MM-DD HH:mm:ss.SSS} | {record['level']: <8} | {record['name']}:{record['function']}:{record['line']} - {record['message']}"
+            sse_log_queue.put_nowait(log_entry)
+        except asyncio.QueueFull:
+            print("Warning: SSE log queue is full. Dropping message.", file=sys.stderr)
+        except Exception as e:
+            print(f"Error in SSE log sink: {e}", file=sys.stderr)

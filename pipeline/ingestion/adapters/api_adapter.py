@@ -6,6 +6,8 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from config import settings
+
 from models.ingestion import AdapterRecord
 
 from .base import DataSourceAdapter
@@ -21,7 +23,7 @@ class ApiAdapter(DataSourceAdapter):
         self,
         url: str,
         headers: dict[str, str] | None = None,
-        timeout: float = 30,
+        timeout: float = settings.DEFAULT_API_TIMEOUT,
         token: str | None = None,
     ):
         """
@@ -38,7 +40,9 @@ class ApiAdapter(DataSourceAdapter):
         if token:
             self.headers["Authorization"] = f"Bearer {token}"
         self.timeout = timeout
-        logger.info(f"Initializing ApiAdapter for URL: {url}")
+        logger.info(
+            f"Initializing ApiAdapter for URL: {url} with timeout: {self.timeout}s"
+        )
         self.session = self._init_session()
 
     def _init_session(self) -> requests.Session:

@@ -5,6 +5,8 @@ Web scraper adapter using crawl4ai to extract structured data.
 import asyncio
 import json
 
+from config import settings
+
 from crawl4ai import (
     AsyncWebCrawler,
     BrowserConfig,
@@ -33,18 +35,16 @@ class WebScraperAdapter(DataSourceAdapter):
     Adapter for web scraping using crawl4ai.
     """
 
-    DEFAULT_PROMPT = "Extract all data from the page in as much detailed as possible"
-
     def __init__(
         self,
         urls: list[str],
         api_key: str,
         schema_file: str | None = None,
-        prompt: str = DEFAULT_PROMPT,
-        llm_provider: str = "openai/gpt-4o-mini",
+        prompt: str = settings.DEFAULT_SCRAPER_PROMPT,
+        llm_provider: str = settings.DEFAULT_SCRAPER_LLM_PROVIDER,
         output_format: str = "json",
         verbose: bool = False,
-        cache_mode: str = "ENABLED",
+        cache_mode: str = settings.DEFAULT_SCRAPER_CACHE_MODE,
     ):
         """
         Initialize the scraper adapter.
@@ -70,6 +70,12 @@ class WebScraperAdapter(DataSourceAdapter):
         logger.info(
             f"Initialized WebScraperAdapter for URLs: {urls} with schema_file={schema_file}, prompt={prompt}, llm_provider={llm_provider}, output_format={output_format}, verbose={verbose}, cache_mode={cache_mode}"
         )
+
+        if not self.api_key:
+            logger.error(
+                "API Key is required for WebScraperAdapter but was not provided."
+            )
+            raise ValueError("API Key is required for WebScraperAdapter.")
 
     def fetch(self) -> list[AdapterRecord]:
         """
@@ -119,7 +125,7 @@ class WebScraperAdapter(DataSourceAdapter):
         elif self.prompt:
             extraction_strategy = LLMExtractionStrategy(
                 llm_config=llm_cfg,
-                instruction=self.prompt,
+                instruction=self.prompt,  # Use the instance's prompt
                 extraction_type="schema",
                 apply_chunking=True,
                 verbose=self.verbose,

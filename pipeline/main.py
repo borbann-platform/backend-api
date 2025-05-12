@@ -1,14 +1,20 @@
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
 import platform
 import asyncio
+
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from loguru import logger
+
+from config import settings, set_sse_log_queue
 
 from stores.memory import InMemoryPipelineStore
 from stores.base import PipelineStore
 from services.pipeline_service import PipelineService
 from scheduler.manager import SchedulerManager
 from routers.pipelines import router as pipelines_router
+from routers.logs import router as logs_router
+
+sse_queue = asyncio.Queue(maxsize=settings.SSE_LOG_QUEUE_MAX_SIZE)
 
 # ! Window specific asyncio policy
 if platform.system() == "Windows":
@@ -18,8 +24,12 @@ if platform.system() == "Windows":
 # --- Resource Initialization ---
 pipeline_store: PipelineStore = InMemoryPipelineStore()
 pipeline_service = PipelineService(store=pipeline_store)
-scheduler_manager = SchedulerManager(pipeline_service=pipeline_service)
-
+scheduler_manager = SchedulerManager(
+    pipeline_service=pipeline_service,
+    check_interval_seconds=settings.SCHEDULER_CHECK_INTERVAL,
+    max_concurrent_runs=settings.SCHEDULER_MAX_CONCURRENT_RUNS,
+    misfire_grace_sec=settings.SCHEDULER_MISFIRE_GRACE_SEC,
+)
 # to avoid circular import
 pipeline_service.set_scheduler_manager(scheduler_manager)
 
@@ -32,10 +42,13 @@ async def lifespan(app: FastAPI):
     app.state.pipeline_store = pipeline_store
     app.state.scheduler_manager = scheduler_manager
     app.state.pipeline_service = pipeline_service
+    app.state.sse_log_queue = sse_queue
+
+    # Configure Loguru SSE Sink (needs the queue instance)
+    set_sse_log_queue(sse_queue)
 
     # Initialize and start the scheduler
     logger.info("Initializing and starting SchedulerManager...")
-
     scheduler_manager.start()
     logger.info("SchedulerManager started.")
 
@@ -51,7 +64,7 @@ async def lifespan(app: FastAPI):
 
 # --- FastAPI App ---
 app = FastAPI(
-    title="Data Integration Pipeline API",
+    title=settings.APP_NAME,
     description="API for managing and running data integration pipelines.",
     version="0.1.0",
     lifespan=lifespan,
@@ -59,6 +72,7 @@ app = FastAPI(
 
 # Include the pipelines router
 app.include_router(pipelines_router)
+app.include_router(logs_router)
 
 
 # --- Root Endpoint (Optional) ---
