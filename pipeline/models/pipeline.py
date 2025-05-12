@@ -9,6 +9,7 @@ from models.ingestion import IngestorInput
 class PipelineStatus(str, enum.Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
+    FAILED = "failed"
 
 
 class RunFrequency(str, enum.Enum):

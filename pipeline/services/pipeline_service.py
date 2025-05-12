@@ -17,7 +17,7 @@ from models.pipeline import (
 )
 from models.ingestion import IngestorInput
 from stores.base import PipelineStore
-from scheduler.utils import calculate_next_run, UTC  # Import the utility and UTC
+from scheduler.utils import calculate_next_run, UTC
 
 # !use TYPE_CHECKING to avoid circular imports at runtime
 # the SchedulerManager needs PipelineService, and PipelineService now needs SchedulerManager
@@ -67,12 +67,12 @@ class PipelineService:
         )
         try:
             pipeline_id = uuid4()
-            now = datetime.now(UTC)  # Use UTC consistently
+            now = datetime.now(UTC)
 
             # Calculate the initial next_run time
             initial_next_run = calculate_next_run(
                 frequency=run_frequency,
-                last_run=None,  # No last run yet
+                last_run=None,
                 start_reference_time=now,
             )
 
@@ -84,9 +84,9 @@ class PipelineService:
                     ingestor_config=ingestor_config,
                     run_frequency=run_frequency,
                     last_run=None,
-                    next_run=initial_next_run,  # Store the calculated next run
+                    next_run=initial_next_run,
                 ),
-                status=PipelineStatus.INACTIVE,  # Start as inactive
+                status=PipelineStatus.INACTIVE,
                 created_at=now,
                 updated_at=now,
             )
@@ -121,50 +121,72 @@ class PipelineService:
             return None
 
         try:
-            update_data = pipeline_in.model_dump(exclude_unset=True)
-            # Use model_copy for a cleaner update merge
-            updated_pipeline = existing_pipeline.model_copy(
-                deep=True, update=update_data
-            )
+            # 1. Create a deep copy to modify
+            updated_pipeline = existing_pipeline.model_copy(deep=True)
 
-            # Check if frequency changed, if so, recalculate next_run
-            config_changed = "config" in update_data
+            # 2. Update top-level fields directly from the input model
+            updated_pipeline.name = pipeline_in.name
+            updated_pipeline.description = pipeline_in.description
+
+            # 3. Handle config update carefully
+            config_changed = False
             frequency_changed = False
-            if (
-                config_changed
-                and updated_pipeline.config.run_frequency
-                != existing_pipeline.config.run_frequency
-            ):
-                frequency_changed = True
+            original_frequency = (
+                updated_pipeline.config.run_frequency
+            )  # Store before potential change
+
+            # Check if the input payload actually provided config data
+            if pipeline_in.config:
+                config_changed = True
+                # Update the fields *within* the existing config object
+                # Ensure the nested ingestor_config is also handled correctly (assuming assignment works or potentially use model_copy/re-init if complex)
+                updated_pipeline.config.ingestor_config = (
+                    pipeline_in.config.ingestor_config.model_copy(deep=True)
+                )  # Use model_copy for safety
+                updated_pipeline.config.run_frequency = pipeline_in.config.run_frequency
+
+                # Check if the frequency actually changed after the update
+                if updated_pipeline.config.run_frequency != original_frequency:
+                    frequency_changed = True
+
+            # 4. Recalculate next_run ONLY if frequency changed
+            if frequency_changed:
                 logger.info(
-                    f"Run frequency changed for pipeline {pipeline_id}. Recalculating next run."
+                    f"Run frequency changed for pipeline {pipeline_id} from {original_frequency} to {updated_pipeline.config.run_frequency}. Recalculating next run."
                 )
                 now = datetime.now(UTC)
+                # Use the existing last_run from the copied object
                 updated_pipeline.config.next_run = calculate_next_run(
                     frequency=updated_pipeline.config.run_frequency,
-                    last_run=existing_pipeline.config.last_run,  # Base on last run
+                    last_run=updated_pipeline.config.last_run,
                     start_reference_time=now,
                 )
                 logger.info(
                     f"Recalculated next_run for {pipeline_id}: {updated_pipeline.config.next_run}"
                 )
 
-            # Save the updated pipeline (store's save method handles updated_at)
-            await self.store.save(updated_pipeline)
-            logger.info(f"Pipeline updated: id={updated_pipeline.id}")
+            # 5. Update the timestamp before saving
+            updated_pipeline.updated_at = datetime.now(UTC)
 
-            # Notify the scheduler if relevant config changed
-            # We notify on any config change or if frequency specifically changed
-            if self.scheduler_manager and (config_changed or frequency_changed):
+            # 6. Save the updated pipeline
+            await self.store.save(updated_pipeline)
+            logger.info(f"Pipeline updated successfully: id={updated_pipeline.id}")
+
+            # 7. Notify the scheduler if config changed (including frequency)
+            # Scheduler needs the *final* state of the updated pipeline for rescheduling.
+            if self.scheduler_manager and config_changed:
                 logger.debug(
-                    f"Notifying scheduler to reschedule pipeline {updated_pipeline.id}"
+                    f"Notifying scheduler to reschedule pipeline {updated_pipeline.id} due to config change."
                 )
+                # Pass the fully updated pipeline object
                 asyncio.create_task(
                     self.scheduler_manager.reschedule_pipeline(updated_pipeline)
                 )
             elif self.scheduler_manager:
                 logger.debug(
-                    f"Pipeline {updated_pipeline.id} updated, but no schedule change needed."
+                    f"Pipeline {updated_pipeline.id} updated (non-config fields), no reschedule needed based on config."
+                    # NOTE: might still want to reschedule if other non-config updates could affect execution,
+                    # but based on current logic, only config changes trigger rescheduling.
                 )
 
             return updated_pipeline
@@ -226,7 +248,7 @@ class PipelineService:
         if not pipeline:
             logger.error(f"Cannot run pipeline: Pipeline not found (id={pipeline_id})")
             return
-        # Simple lock mechanism using status
+        # NOTE: lock mechanism
         if pipeline.status == PipelineStatus.ACTIVE:
             logger.warning(
                 f"Pipeline id={pipeline_id} is already ACTIVE. Skipping run."
@@ -236,8 +258,7 @@ class PipelineService:
         # --- Mark as ACTIVE ---
         try:
             pipeline.status = PipelineStatus.ACTIVE
-            # Optionally mark start time here if needed, but last_run usually marks completion
-            # pipeline.config.last_run = datetime.now(UTC)
+            pipeline.updated_at = datetime.now(UTC)  # Update timestamp
             await self.store.save(pipeline)
             logger.info(f"Pipeline {pipeline_id} marked as ACTIVE.")
         except Exception as e:
@@ -245,20 +266,19 @@ class PipelineService:
                 f"Failed to mark pipeline {pipeline_id} as ACTIVE: {e}. Aborting run.",
                 exc_info=True,
             )
-            # Restore original status if possible? Depends on store implementation.
-            return  # Abort run if we can't even update status
+            # Attempt to restore status? Depends on store guarantees.
+            # pipeline.status = original_status # Potentially try rollback
+            return  # Abort run
 
         # --- Execute Pipeline Logic ---
         run_successful = False
         try:
             logger.info(f"Executing core logic for pipeline id={pipeline_id}...")
             # ---------------------------------------------------
-            # TODO: replace with actual pipeline execution call
-            # Example: await self._execute_ingestion(pipeline.config.ingestor_config)
-            # Example: await self._process_data(...)
-            await asyncio.sleep(5)  # Simulate work
-            logger.info(f"Core logic finished successfully for id={pipeline_id}.")
+            # Ensure _execute_ingestion is awaited if it's async
+            await self._execute_ingestion(pipeline.config.ingestor_config)
             # ---------------------------------------------------
+            logger.info(f"Core logic finished successfully for id={pipeline_id}.")
             run_successful = True
 
         except Exception as e:
@@ -270,29 +290,49 @@ class PipelineService:
 
         # --- Update Final State ---
         try:
-            # Fetch the latest state again in case of external changes (though unlikely with ACTIVE status lock)
+            # Fetch the latest state again to minimize race conditions, though the ACTIVE lock helps
             final_pipeline_state = await self.store.get(pipeline_id)
             if not final_pipeline_state:
                 logger.warning(
                     f"Pipeline {pipeline_id} disappeared during run. Cannot update final state."
                 )
+                # The pipeline might have been deleted externally while running.
+                # Scheduler might need cleanup if the job still exists.
+                if self.scheduler_manager:
+                    logger.warning(
+                        f"Attempting to unschedule potentially orphaned job for {pipeline_id}"
+                    )
+                    asyncio.create_task(
+                        self.scheduler_manager.unschedule_pipeline(pipeline_id)
+                    )
                 return
 
+            # Avoid modifying the object fetched directly if store uses caching/references
+            final_pipeline_state = final_pipeline_state.model_copy(deep=True)
+
             now = datetime.now(UTC)
-            final_pipeline_state.status = PipelineStatus.INACTIVE  # Reset status
-            # TODO: Add a FAILED status?
-            # final_pipeline_state.status = PipelineStatus.INACTIVE if run_successful else PipelineStatus.FAILED
+            final_pipeline_state.status = (
+                PipelineStatus.INACTIVE if run_successful else PipelineStatus.FAILED
+            )
 
             if run_successful:
                 final_pipeline_state.config.last_run = (
                     now  # Mark completion time on success
                 )
 
-            # Calculate and store the *next* run time after this one
+            # Calculate and store the *next* run time based on the outcome
+            # Use the *updated* last_run if the run was successful
+            current_last_run = (
+                final_pipeline_state.config.last_run
+            )  # This is 'now' if successful, else original last_run
             final_pipeline_state.config.next_run = calculate_next_run(
                 frequency=final_pipeline_state.config.run_frequency,
-                last_run=final_pipeline_state.config.last_run,  # Use the updated last_run
-                start_reference_time=now,
+                last_run=current_last_run,  # Use the relevant last_run for calculation
+                start_reference_time=now,  # Use current time as reference for calculation
+            )
+
+            final_pipeline_state.updated_at = (
+                now  # Update timestamp for this final save
             )
 
             await self.store.save(final_pipeline_state)
@@ -300,10 +340,10 @@ class PipelineService:
                 f"Pipeline {pipeline_id} run finished. Status: {final_pipeline_state.status}, Last Run: {final_pipeline_state.config.last_run}, Next Run: {final_pipeline_state.config.next_run}"
             )
 
-            # Notify scheduler about the *new* next run time
+            # Notify scheduler about the *new* next run time so it can reschedule accurately
             if self.scheduler_manager:
                 logger.debug(
-                    f"Notifying scheduler to reschedule pipeline {pipeline_id} after run completion."
+                    f"Notifying scheduler to reschedule pipeline {pipeline_id} after run completion with next run {final_pipeline_state.config.next_run}."
                 )
                 asyncio.create_task(
                     self.scheduler_manager.reschedule_pipeline(final_pipeline_state)
@@ -314,12 +354,32 @@ class PipelineService:
                 f"Failed to update pipeline {pipeline_id} state after run execution: {e}",
                 exc_info=True,
             )
-            # The pipeline might be left in ACTIVE state if this fails. Requires manual intervention or recovery logic.
+            # The pipeline might be left in ACTIVE or an inconsistent state.
+            # Consider adding monitoring or retry logic here.
 
-    # TODO: Complete this method
-    # --- Placeholder for actual execution ---
     async def _execute_ingestion(self, config: IngestorInput):
-        # Replace with your actual ingestion logic
-        logger.info(f"Simulating ingestion with config: {config}")
-        await asyncio.sleep(2)  # Simulate I/O
-        logger.info("Ingestion simulation complete.")
+        """
+        Executes the ingestion process for a pipeline using the provided IngestorInput config.
+        Returns the ingestion results or raises an exception on failure.
+        """
+        # Ensure Ingestor is imported locally or globally if needed
+        # from ingestion.core import Ingestor # Example import if needed
+
+        # Check if Ingestor is already available (e.g., imported at module level)
+        # If not, uncomment the import above or ensure it's accessible.
+        # Assuming Ingestor is available in the scope:
+        try:
+            # Avoid circular import
+            from ingestion.core import Ingestor
+
+            logger.info(f"Executing ingestion with config: {config}")
+            # NOTE: Can be async
+            results = Ingestor.run(config.sources)
+            logger.info(f"Ingestion completed successfully. Results: {results}")
+            return results
+        except ImportError:
+            logger.error("Failed to import Ingestor. Cannot execute ingestion.")
+            raise RuntimeError("Ingestion module not found")
+        except Exception as e:
+            logger.error(f"Ingestion execution failed: {e}", exc_info=True)
+            raise
