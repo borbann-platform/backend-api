@@ -2,7 +2,7 @@
 API adapter to fetch JSON data from HTTP endpoints.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -20,9 +20,9 @@ class ApiAdapter(DataSourceAdapter):
     def __init__(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
         timeout: float = 30,
-        token: Optional[str] = None,
+        token: str | None = None,
     ):
         """
         Initialize the API adapter.
@@ -50,7 +50,7 @@ class ApiAdapter(DataSourceAdapter):
             total=3,
             backoff_factor=0.3,
             status_forcelist=[500, 502, 503, 504],
-            allowed_methods=["GET"]
+            allowed_methods=["GET"],
         )
         adapter = HTTPAdapter(max_retries=retries)
         session.mount("https://", adapter)
@@ -58,7 +58,7 @@ class ApiAdapter(DataSourceAdapter):
         logger.debug("HTTP session initialized with retry strategy.")
         return session
 
-    def fetch(self) -> List[Dict[str, Any]]:
+    def fetch(self) -> list[dict[str, Any]]:
         """
         Perform a GET request and return JSON data as a list of records.
 
