@@ -6,7 +6,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from models.adapters import AdapterRecord
+from models.ingestion import AdapterRecord
 
 from .base import DataSourceAdapter
 from loguru import logger

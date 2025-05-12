@@ -22,7 +22,7 @@ from crawl4ai.extraction_strategy import (
 from .base import DataSourceAdapter
 from loguru import logger
 
-from models.adapters import AdapterRecord
+from models.ingestion import AdapterRecord
 
 # pyright: reportArgumentType=false
 # pyright: reportAssignmentType=false

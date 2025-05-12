@@ -7,7 +7,7 @@ from loguru import logger
 from fastapi import UploadFile
 
 from .base import DataSourceAdapter
-from models.adapters import AdapterRecord
+from models.ingestion import AdapterRecord
 
 
 class FileAdapter(DataSourceAdapter):

@@ -1,7 +1,7 @@
 import os
 import pytest
 from ingestion.adapters.web_scraper_adapter import WebScraperAdapter
-from models.adapters import AdapterRecord
+from models.ingestion import AdapterRecord
 
 
 @pytest.mark.integration

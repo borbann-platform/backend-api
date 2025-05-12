@@ -3,7 +3,7 @@ Define the DataSourceAdapter protocol for ingestion adapters.
 """
 
 from typing import Protocol
-from models.adapters import AdapterRecord
+from models.ingestion import AdapterRecord
 
 
 class DataSourceAdapter(Protocol):

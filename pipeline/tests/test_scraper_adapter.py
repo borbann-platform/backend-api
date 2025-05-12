@@ -3,7 +3,7 @@ import json
 from unittest.mock import patch, AsyncMock, MagicMock, mock_open
 
 from ingestion.adapters.web_scraper_adapter import WebScraperAdapter
-from models.adapters import AdapterRecord
+from models.ingestion import AdapterRecord
 
 
 @pytest.mark.asyncio
