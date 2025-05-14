@@ -1,3 +1,4 @@
+import sys
 import platform
 import asyncio
 
@@ -17,9 +18,10 @@ from routers.logs import router as logs_router
 sse_queue = asyncio.Queue(maxsize=settings.SSE_LOG_QUEUE_MAX_SIZE)
 
 # ! Window specific asyncio policy
-if platform.system() == "Windows":
-    logger.info("Setting WindowsProactorEventLoopPolicy for asyncio.")
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+if platform.system() == "Windows" or sys.platform == "win32":
+    logger.info("Setting WindowsSelectorEventLoopPolicy for asyncio.")
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 
 # --- Resource Initialization ---
 pipeline_store: PipelineStore = InMemoryPipelineStore()
@@ -85,6 +87,12 @@ async def read_root():
 if __name__ == "__main__":
     import uvicorn
 
+    if platform.system() == "Windows":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    import asyncio
+
+    # asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
     logger.info("Starting Uvicorn server...")
     # ! use reload=True only for development
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, loop="asyncio")
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -30,7 +30,7 @@ class FileAdapter(DataSourceAdapter):
             f"Initialized FileAdapter for upload: {upload.filename}, format: {upload.content_type}"
         )
 
-    def fetch(self) -> list[AdapterRecord]:
+    async def fetch(self) -> list[AdapterRecord]:
         """
         Read and parse the file, returning a list of records.
         Supports both path-based and uploaded file-like inputs.

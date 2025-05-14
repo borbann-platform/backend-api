@@ -3,7 +3,7 @@ from models.ingestion import IngestSourceConfig, OutputData
 
 
 class MLIngestionStrategy(IngestionMethod):
-    def run(self, sources: list[IngestSourceConfig]) -> OutputData:
+    async def run(self, sources: list[IngestSourceConfig]) -> OutputData:
         # TODO: Add ML-based logic (e.g., deduplication, entity linking, classification)
         return OutputData(
             records=[],  # Placeholder

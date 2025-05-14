@@ -17,6 +17,10 @@ class AppSettings(BaseSettings):
     Loads values from environment variables or a .env file.
     """
 
+    USE_SERVER_API_KEY: bool = True
+    OPENAI_API_KEY: str | None = None
+    GEMINI_API_KEY: str | None = None
+
     # Application settings
     APP_NAME: str = "PipelineRunnerApp"
     LOG_LEVEL: str = "DEBUG"  # Logging level (e.g., DEBUG, INFO, WARNING)
@@ -32,7 +36,7 @@ class AppSettings(BaseSettings):
 
     # Ingestion Defaults
     DEFAULT_API_TIMEOUT: int = 30
-    DEFAULT_SCRAPER_LLM_PROVIDER: str = "openai/gpt-4o-mini"
+    DEFAULT_SCRAPER_LLM_PROVIDER: str = "gemini/gemini-1.5-pro"
     DEFAULT_SCRAPER_CACHE_MODE: str = "ENABLED"
     DEFAULT_SCRAPER_PROMPT: str = (
         "Extract all data from the page in as much detailed as possible"

@@ -11,7 +11,7 @@ class DataSourceAdapter(Protocol):
     Protocol for data source adapters.
     """
 
-    def fetch(self) -> list[AdapterRecord]:
+    async def fetch(self) -> list[AdapterRecord]:
         """
         Fetch data from the source.
 

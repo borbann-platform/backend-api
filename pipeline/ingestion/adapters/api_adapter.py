@@ -62,7 +62,7 @@ class ApiAdapter(DataSourceAdapter):
         logger.debug("HTTP session initialized with retry strategy.")
         return session
 
-    def fetch(self) -> list[AdapterRecord]:
+    async def fetch(self) -> list[AdapterRecord]:
         """
         Perform a GET request and return JSON data as a list of records.
 

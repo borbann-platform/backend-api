@@ -365,7 +365,7 @@ class PipelineService:
         """
         try:
             logger.info(f"Executing ingestion with config: {config}")
-            results: OutputData = Ingestor.run(config.sources)
+            results: OutputData = await Ingestor.run(config.sources)
             logger.info(
                 f"Ingestion completed successfully. Records count: {len(results.records)}"
             )

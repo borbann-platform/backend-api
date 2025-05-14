@@ -4,5 +4,5 @@ from models.ingestion import IngestSourceConfig, OutputData
 
 class IngestionMethod(ABC):
     @abstractmethod
-    def run(self, sources: list[IngestSourceConfig]) -> OutputData:
+    async def run(self, sources: list[IngestSourceConfig]) -> OutputData:
         pass

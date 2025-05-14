@@ -54,7 +54,7 @@ class FileConfig(BaseModel):
 
 class ScrapeConfig(BaseModel):
     urls: list[str]
-    api_key: str
+    api_key: str | None = None
     schema_file: str | None = None
     prompt: str | None = None
     llm_provider: str | None = None
@@ -74,6 +74,17 @@ class IngestSourceConfig(BaseModel):
     config: ApiConfig | FileConfig | ScrapeConfig = Field(
         ..., description="Configuration for the adapter"
     )
+
+    @property
+    def parsed_config(self) -> ApiConfig | FileConfig | ScrapeConfig:
+        if self.type == SourceType.API:
+            return ApiConfig(**self.config.model_dump())
+        elif self.type == SourceType.FILE:
+            return FileConfig(**self.config.model_dump())
+        elif self.type == SourceType.SCRAPE:
+            return ScrapeConfig(**self.config.model_dump())
+        else:
+            raise ValueError(f"Unsupported type: {self.type}")
 
 
 class IngestorInput(BaseModel):

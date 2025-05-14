@@ -2,7 +2,6 @@
 Web scraper adapter using crawl4ai to extract structured data.
 """
 
-import asyncio
 import json
 
 from config import settings
@@ -21,10 +20,12 @@ from crawl4ai.extraction_strategy import (
     ExtractionStrategy,
 )
 
+
 from .base import DataSourceAdapter
 from loguru import logger
 
 from models.ingestion import AdapterRecord
+from models.crawler import HouseSchema
 
 # pyright: reportArgumentType=false
 # pyright: reportAssignmentType=false
@@ -38,13 +39,13 @@ class WebScraperAdapter(DataSourceAdapter):
     def __init__(
         self,
         urls: list[str],
-        api_key: str,
+        api_key: str | None = None,
         schema_file: str | None = None,
         prompt: str = settings.DEFAULT_SCRAPER_PROMPT,
         llm_provider: str = settings.DEFAULT_SCRAPER_LLM_PROVIDER,
         output_format: str = "json",
-        verbose: bool = False,
-        cache_mode: str = settings.DEFAULT_SCRAPER_CACHE_MODE,
+        verbose: bool = True,
+        cache_mode: str = "BYPASS",
     ):
         """
         Initialize the scraper adapter.
@@ -71,28 +72,23 @@ class WebScraperAdapter(DataSourceAdapter):
             f"Initialized WebScraperAdapter for URLs: {urls} with schema_file={schema_file}, prompt={prompt}, llm_provider={llm_provider}, output_format={output_format}, verbose={verbose}, cache_mode={cache_mode}"
         )
 
-        if not self.api_key:
-            logger.error(
-                "API Key is required for WebScraperAdapter but was not provided."
-            )
-            raise ValueError("API Key is required for WebScraperAdapter.")
+        if settings.USE_SERVER_API_KEY:
+            if llm_provider == "openai/gpt-4o-mini":
+                self.api_key = settings.OPENAI_API_KEY
+            elif llm_provider == "gemini/gemini-1.5-pro":
+                self.api_key = settings.GEMINI_API_KEY
 
-    def fetch(self) -> list[AdapterRecord]:
+        if not self.api_key:
+            raise ValueError("API key is required")
+
+    async def fetch(self) -> list[AdapterRecord]:
         """
-        Synchronously fetch data by running the async crawler.
+        Perform web scraping and return extracted records.
 
         Returns:
-            List of extracted records.
-
-        Raises:
-            RuntimeError: On failure during crawling or extraction.
+            List of AdapterRecord objects.
         """
-        logger.info("Starting synchronous fetch for web scraping.")
-        try:
-            return asyncio.run(self._fetch_async())
-        except Exception as e:
-            logger.error(f"Web scraping failed: {e}")
-            raise RuntimeError(f"Web scraping failed: {e}")
+        return await self._fetch_async()
 
     async def _fetch_async(self) -> list[AdapterRecord]:
         """
@@ -125,10 +121,13 @@ class WebScraperAdapter(DataSourceAdapter):
         elif self.prompt:
             extraction_strategy = LLMExtractionStrategy(
                 llm_config=llm_cfg,
-                instruction=self.prompt,  # Use the instance's prompt
+                instruction=self.prompt,
+                schema=HouseSchema.schema(),
                 extraction_type="schema",
+                chunk_token_threshold=1200,
                 apply_chunking=True,
                 verbose=self.verbose,
+                extra_args={"max_tokens": 1500},
             )
             logger.debug("Using LLM extraction strategy.")
         else:
@@ -163,34 +162,45 @@ class WebScraperAdapter(DataSourceAdapter):
 
         adapter_records: list[AdapterRecord] = []
         for res in results:
+            logger.debug(res)
             if not res.success or not res.extracted_content:
                 logger.warning(
                     f"Skipping failed or empty result for URL: {getattr(res, 'url', None)}"
                 )
                 continue
-            try:
-                content = json.loads(res.extracted_content)
-                logger.info(f"Parsed extracted content for URL: {res.url}")
-            except Exception:
-                logger.error(f"Failed to parse extracted content for URL: {res.url}")
-                continue
-            if content is None:
-                logger.warning(f"Extracted content is None for URL: {res.url}")
-                continue
-            if isinstance(content, list):
-                for item in content:
-                    if isinstance(item, dict):
-                        item["source_url"] = res.url
-                        adapter_records.append(
-                            AdapterRecord(source="scrape", data=item)
-                        )
-            elif isinstance(content, dict):
-                content["source_url"] = res.url
-                adapter_records.append(AdapterRecord(source="scrape", data=content))
-            else:
-                logger.warning(
-                    f"Extracted content for URL {res.url} is not a list or dict: {type(content)}"
+
+            adapter_records.append(
+                AdapterRecord(
+                    source="scrape",
+                    data={"content": res.metadata, "source_url": res.url},
                 )
+            )
+
+            # try:
+            #     content = json.loads(res.extracted_content)
+            #     logger.info(f"Parsed extracted content for URL: {res.url}")
+            # except Exception:
+            #     logger.error(f"Failed to parse extracted content for URL: {res.url}")
+            #     continue
+
+            # if content is None:
+            #     logger.warning(f"Extracted content is None for URL: {res.url}")
+            #     continue
+
+            # if isinstance(content, list):
+            #     for item in content:
+            #         if isinstance(item, dict):
+            #             item["source_url"] = res.url
+            #             adapter_records.append(
+            #                 AdapterRecord(source="scrape", data=item)
+            #             )
+            # elif isinstance(content, dict):
+            #     content["source_url"] = res.url
+            #     adapter_records.append(AdapterRecord(source="scrape", data=content))
+            # else:
+            #     logger.warning(
+            #         f"Extracted content for URL {res.url} is not a list or dict: {type(content)}"
+            #     )
 
         logger.info(
             f"Web scraping completed. Extracted {len(adapter_records)} records."

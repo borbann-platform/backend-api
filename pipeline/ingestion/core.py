@@ -16,7 +16,9 @@ class Ingestor:
     """
 
     @staticmethod
-    def run(sources: list[IngestSourceConfig], strategy: str = "simple") -> OutputData:
+    async def run(
+        sources: list[IngestSourceConfig], strategy: str = "simple"
+    ) -> OutputData:
         strategies: dict[str, IngestionMethod] = {
             "simple": SimpleIngestionStrategy(),
             "ml": MLIngestionStrategy(),
@@ -25,4 +27,4 @@ class Ingestor:
         if strategy not in strategies:
             raise ValueError(f"Unsupported strategy: {strategy}")
 
-        return strategies[strategy].run(sources)
+        return await strategies[strategy].run(sources)

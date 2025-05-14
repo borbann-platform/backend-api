@@ -17,32 +17,38 @@ from loguru import logger
 
 
 class SimpleIngestionStrategy(IngestionMethod):
-    def run(self, sources: list[IngestSourceConfig]) -> OutputData:
+    async def run(self, sources: list[IngestSourceConfig]) -> OutputData:
         results: list[AdapterRecord] = []
-
+        # TODO: find better way to check config type and property
         for source in sources:
             try:
                 match source.type:
                     case SourceType.API:
-                        config = source.config
-                        assert isinstance(config, ApiConfig)
+                        config = source.parsed_config
+                        assert isinstance(config, ApiConfig), (
+                            f"Wrong config type for source {source.type}: {config}, get type {type(config)}"
+                        )
                         adapter = ApiAdapter(
                             url=config.url,
                             headers=config.headers,
                             timeout=config.timeout or settings.DEFAULT_API_TIMEOUT,
                             token=config.token,
                         )
-                        records = adapter.fetch()
+                        records = await adapter.fetch()
 
                     case SourceType.FILE:
-                        config = source.config
-                        assert isinstance(config, FileConfig)
+                        config = source.parsed_config
+                        assert isinstance(config, FileConfig), (
+                            f"Wrong config type for source {source.type}: {config}, get type {type(config)}"
+                        )
                         adapter = FileAdapter(upload=config.upload)
-                        records = adapter.fetch()
+                        records = await adapter.fetch()
 
                     case SourceType.SCRAPE:
-                        config = source.config
-                        assert isinstance(config, ScrapeConfig)
+                        config = source.parsed_config
+                        assert isinstance(config, ScrapeConfig), (
+                            f"Wrong config type for source {source.type}: {config}, get type {type(config)}"
+                        )
                         adapter = WebScraperAdapter(
                             urls=config.urls,
                             api_key=config.api_key,
@@ -55,7 +61,7 @@ class SimpleIngestionStrategy(IngestionMethod):
                             cache_mode=config.cache_mode
                             or settings.DEFAULT_SCRAPER_CACHE_MODE,
                         )
-                        records = adapter.fetch()
+                        records = await adapter.fetch()
 
                 results.extend(records)
 

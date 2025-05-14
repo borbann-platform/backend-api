@@ -38,20 +38,20 @@ def test_fetch_dict_response(single_product):
     assert adapter_result[0].data == expected_data
 
 
-def test_fetch_list_response(multiple_product):
+async def test_fetch_list_response(multiple_product):
     """Test fetching a list of records from a JSON API endpoint."""
     response = httpx.get(multiple_product, timeout=10)
     response.raise_for_status()
     expected_data = response.json()
 
     adapter = ApiAdapter(url=multiple_product)
-    adapter_result = adapter.fetch()
+    adapter_result = await adapter.fetch()
 
     assert adapter_result[0].data == expected_data
 
 
 @responses.activate
-def test_fetch_http_error(single_product):
+async def test_fetch_http_error(single_product):
     """Test handling HTTP errors and validate graceful failure."""
     for _ in range(4):
         responses.add(responses.GET, single_product, status=500)
@@ -59,20 +59,20 @@ def test_fetch_http_error(single_product):
     adapter = ApiAdapter(url=single_product)
 
     with pytest.raises(RuntimeError) as exc_info:
-        adapter.fetch()
+        await adapter.fetch()
 
     assert "API request failed" in str(exc_info.value)
 
 
 @responses.activate
-def test_fetch_json_decode_error(single_product):
+async def test_fetch_json_decode_error(single_product):
     """Test handling JSON decode errors."""
     responses.add(responses.GET, single_product, body="not-a-json", status=200)
 
     adapter = ApiAdapter(url=single_product)
 
     with pytest.raises(RuntimeError) as exc_info:
-        adapter.fetch()
+        await adapter.fetch()
 
     assert "Failed to parse JSON response" in str(exc_info.value)
 
