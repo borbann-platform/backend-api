@@ -14,17 +14,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useTopNavigationStore } from "@/store/top-navgation-store";
+import { useModelState } from "@/store/model-store";
 import { useShallow } from "zustand/react/shallow";
 
 export function TopNavigation() {
-  const { selectedModel, setSelectedModel, models } = useTopNavigationStore(
-    useShallow(
-    (state) => ({
+  const { selectedModel, setSelectedModel, models } = useModelState(
+    useShallow((state) => ({
       selectedModel: state.selectedModel,
       setSelectedModel: state.setSelectedModel,
       models: state.models,
-    })),
+    }))
   );
 
   return (
@@ -33,18 +32,6 @@ export function TopNavigation() {
         <Home className="h-5 w-5" />
         <span className="font-semibold">BorBann</span>
       </Link>
-      <div className="flex-1 max-w-md mx-4">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search locations..."
-            className="w-full h-10 px-4 rounded-md border border-input bg-background"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
-      </div>
       <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

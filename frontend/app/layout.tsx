@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import Sidebar from "@/components/sidebar";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -26,7 +25,6 @@ export default function RootLayout({
       <body className={poppins.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <div className="flex h-screen">
-            <Sidebar />
             <div className="flex-1 overflow-auto">{children}</div>
           </div>
         </ThemeProvider>
