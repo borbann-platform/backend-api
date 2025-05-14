@@ -1,31 +1,32 @@
 "use client";
 
-import { useState } from "react";
+// import { ModelCard } from "@/components/models/model-card";
+import PageHeader from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { useModelState } from "@/store/model-store";
 import {
+  AlertTriangle,
   BrainCircuit,
-  Clock,
+  Check,
   Database,
   Play,
   Plus,
-  Settings,
-  Sliders,
-  Trash2,
-  AlertTriangle,
-  Check,
-  ArrowRight,
-  Info,
 } from "lucide-react";
-import Link from "next/link";
-import PageHeader from "@/components/page-header";
+import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 
 export default function ModelsPage() {
   const [activeTab, setActiveTab] = useState("my-models");
@@ -34,85 +35,36 @@ export default function ModelsPage() {
   const [isTraining, setIsTraining] = useState(false);
   const [modelName, setModelName] = useState("");
   const [modelDescription, setModelDescription] = useState("");
+  const { models } = useModelState(
+    useShallow((state) => ({
+      models: state.models,
+    }))
+  );
 
   const dataPipelines = [
-    { id: "pipeline-1", name: "Property Listings", records: 1240, lastUpdated: "2 hours ago" },
-    { id: "pipeline-2", name: "Rental Market Data", records: 830, lastUpdated: "Yesterday" },
-    { id: "pipeline-3", name: "Price Comparison", records: 1560, lastUpdated: "2 days ago" },
-    { id: "pipeline-4", name: "Commercial Properties", records: 450, lastUpdated: "1 week ago" },
-  ];
-
-  const models = [
     {
-      id: "model-1",
-      name: "Standard ML Model v2.4",
-      type: "Regression",
-      hyperparameters: {
-        learningRate: "0.01",
-        maxDepth: "6",
-        numEstimators: "100",
-      },
-      dataSource: "System Base Model",
-      status: "active",
-      lastUpdated: "3 days ago",
-      isSystem: true,
+      id: "pipeline-1",
+      name: "Property Listings",
+      records: 1240,
+      lastUpdated: "2 hours ago",
     },
     {
-      id: "model-2",
-      name: "Enhanced Neural Network v1.8",
-      type: "Neural Network",
-      hyperparameters: {
-        layers: "4",
-        neurons: "128,64,32,16",
-        dropout: "0.2",
-      },
-      dataSource: "System Base Model",
-      status: "active",
+      id: "pipeline-2",
+      name: "Rental Market Data",
+      records: 830,
+      lastUpdated: "Yesterday",
+    },
+    {
+      id: "pipeline-3",
+      name: "Price Comparison",
+      records: 1560,
+      lastUpdated: "2 days ago",
+    },
+    {
+      id: "pipeline-4",
+      name: "Commercial Properties",
+      records: 450,
       lastUpdated: "1 week ago",
-      isSystem: true,
-    },
-    {
-      id: "model-3",
-      name: "Geospatial Regression v3.1",
-      type: "Geospatial",
-      hyperparameters: {
-        spatialWeight: "0.7",
-        kernelType: "gaussian",
-        bandwidth: "adaptive",
-      },
-      dataSource: "System Base Model",
-      status: "active",
-      lastUpdated: "2 weeks ago",
-      isSystem: true,
-    },
-    {
-      id: "model-4",
-      name: "Time Series Forecast v2.0",
-      type: "Time Series",
-      hyperparameters: {
-        p: "2",
-        d: "1",
-        q: "2",
-        seasonal: "true",
-      },
-      dataSource: "System Base Model",
-      status: "active",
-      lastUpdated: "1 month ago",
-      isSystem: true,
-    },
-    {
-      id: "model-5",
-      name: "Custom Model (User #1242)",
-      type: "Ensemble",
-      hyperparameters: {
-        baseEstimators: "3",
-        votingMethod: "weighted",
-        weights: "0.4,0.4,0.2",
-      },
-      dataSource: "Property Listings Pipeline",
-      status: "active",
-      lastUpdated: "5 days ago",
-      isSystem: false,
     },
   ];
 
@@ -146,7 +98,11 @@ export default function ModelsPage() {
         ]}
       />
 
-      <Tabs defaultValue="my-models" className="mt-6" onValueChange={setActiveTab}>
+      <Tabs
+        defaultValue="my-models"
+        className="mt-6"
+        onValueChange={setActiveTab}
+      >
         <div className="flex justify-between items-center mb-6">
           <TabsList>
             <TabsTrigger value="my-models">My Models</TabsTrigger>
@@ -155,7 +111,10 @@ export default function ModelsPage() {
           </TabsList>
 
           {activeTab !== "train-model" && (
-            <Button onClick={() => setActiveTab("train-model")} className="gap-2">
+            <Button
+              onClick={() => setActiveTab("train-model")}
+              className="gap-2"
+            >
               <Plus className="h-4 w-4" />
               Train New Model
             </Button>
@@ -164,35 +123,34 @@ export default function ModelsPage() {
 
         <TabsContent value="my-models">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {models
-              .filter((model) => !model.isSystem)
-              .map((model) => (
-                <ModelCard key={model.id} model={model} />
-              ))}
+            {/* {models} */}
           </div>
 
-          {models.filter((model) => !model.isSystem).length === 0 && (
+          {models && (
             <Card className="border-dashed">
               <CardContent className="pt-6 text-center">
                 <BrainCircuit className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Custom Models Yet</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  No Custom Models Yet
+                </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Train your first custom model to get started with personalized property predictions.
+                  Train your first custom model to get started with personalized
+                  property predictions.
                 </p>
-                <Button onClick={() => setActiveTab("train-model")}>Train Your First Model</Button>
+                <Button onClick={() => setActiveTab("train-model")}>
+                  Train Your First Model
+                </Button>
               </CardContent>
             </Card>
           )}
         </TabsContent>
 
         <TabsContent value="system-models">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {models
-              .filter((model) => model.isSystem)
-              .map((model) => (
-                <ModelCard key={model.id} model={model} />
-              ))}
-          </div>
+          {/* <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {models.map((model) => (
+              <ModelCard model={model} />
+            ))}
+          </div> */}
         </TabsContent>
 
         <TabsContent value="train-model">
@@ -215,7 +173,9 @@ export default function ModelsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="model-description">Description (Optional)</Label>
+                    <Label htmlFor="model-description">
+                      Description (Optional)
+                    </Label>
                     <Textarea
                       id="model-description"
                       placeholder="Describe the purpose of this model..."
@@ -237,28 +197,42 @@ export default function ModelsPage() {
                   </div>
 
                   <div className="pt-2">
-                    <h3 className="text-sm font-medium mb-2">Advanced Settings</h3>
+                    <h3 className="text-sm font-medium mb-2">
+                      Advanced Settings
+                    </h3>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="feature-selection">Automatic Feature Selection</Label>
-                          <p className="text-xs text-muted-foreground">Let AI select the most relevant features</p>
+                          <Label htmlFor="feature-selection">
+                            Automatic Feature Selection
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Let AI select the most relevant features
+                          </p>
                         </div>
                         <Switch id="feature-selection" defaultChecked />
                       </div>
 
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="hyperparameter-tuning">Hyperparameter Tuning</Label>
-                          <p className="text-xs text-muted-foreground">Optimize model parameters automatically</p>
+                          <Label htmlFor="hyperparameter-tuning">
+                            Hyperparameter Tuning
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Optimize model parameters automatically
+                          </p>
                         </div>
                         <Switch id="hyperparameter-tuning" defaultChecked />
                       </div>
 
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="cross-validation">Cross-Validation</Label>
-                          <p className="text-xs text-muted-foreground">Use k-fold cross-validation</p>
+                          <Label htmlFor="cross-validation">
+                            Cross-Validation
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Use k-fold cross-validation
+                          </p>
                         </div>
                         <Switch id="cross-validation" defaultChecked />
                       </div>
@@ -272,7 +246,9 @@ export default function ModelsPage() {
               <Card className="mb-6">
                 <CardHeader>
                   <CardTitle>Select Data Source</CardTitle>
-                  <CardDescription>Choose a data pipeline to train your model</CardDescription>
+                  <CardDescription>
+                    Choose a data pipeline to train your model
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -280,20 +256,26 @@ export default function ModelsPage() {
                       <div
                         key={pipeline.id}
                         className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          selectedPipeline === pipeline.id ? "border-primary bg-primary/5" : "hover:border-primary/50"
+                          selectedPipeline === pipeline.id
+                            ? "border-primary bg-primary/5"
+                            : "hover:border-primary/50"
                         }`}
-                        onClick={() => setSelectedPipeline(pipeline.id)}>
+                        onClick={() => setSelectedPipeline(pipeline.id)}
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <Database className="h-5 w-5 text-primary" />
                             <div>
                               <h3 className="font-medium">{pipeline.name}</h3>
                               <p className="text-xs text-muted-foreground">
-                                {pipeline.records.toLocaleString()} records • Updated {pipeline.lastUpdated}
+                                {pipeline.records.toLocaleString()} records •
+                                Updated {pipeline.lastUpdated}
                               </p>
                             </div>
                           </div>
-                          {selectedPipeline === pipeline.id && <Check className="h-5 w-5 text-primary" />}
+                          {selectedPipeline === pipeline.id && (
+                            <Check className="h-5 w-5 text-primary" />
+                          )}
                         </div>
                       </div>
                     ))}
@@ -304,7 +286,9 @@ export default function ModelsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Training Process</CardTitle>
-                  <CardDescription>Monitor and control the training process</CardDescription>
+                  <CardDescription>
+                    Monitor and control the training process
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isTraining ? (
@@ -335,7 +319,11 @@ export default function ModelsPage() {
                       </div>
 
                       {trainingProgress < 100 && (
-                        <Button variant="outline" className="w-full" onClick={() => setIsTraining(false)}>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setIsTraining(false)}
+                        >
                           Cancel Training
                         </Button>
                       )}
@@ -363,7 +351,9 @@ export default function ModelsPage() {
                           <BrainCircuit className="h-8 w-8 text-primary" />
                           <div>
                             <h3 className="font-medium">Ready to Train</h3>
-                            <p className="text-sm text-muted-foreground">Configure your settings and start training</p>
+                            <p className="text-sm text-muted-foreground">
+                              Configure your settings and start training
+                            </p>
                           </div>
                         </div>
 
@@ -383,13 +373,18 @@ export default function ModelsPage() {
                       </div>
 
                       <div className="flex gap-2">
-                        <Button variant="outline" className="flex-1" onClick={() => setActiveTab("my-models")}>
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => setActiveTab("my-models")}
+                        >
                           Cancel
                         </Button>
                         <Button
                           className="flex-1 gap-2"
                           onClick={handleStartTraining}
-                          disabled={!selectedPipeline || !modelName}>
+                          disabled={!selectedPipeline || !modelName}
+                        >
                           <Play className="h-4 w-4" />
                           Start Training
                         </Button>
@@ -403,98 +398,5 @@ export default function ModelsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  );
-}
-
-interface ModelCardProps {
-  model: {
-    id: string;
-    name: string;
-    type: string;
-    hyperparameters: {
-      [key: string]: string;
-    };
-    dataSource: string;
-    status: string;
-    lastUpdated: string;
-    isSystem: boolean;
-  };
-}
-
-function ModelCard({ model }: ModelCardProps) {
-  return (
-    <Card className={model.isSystem ? "border-primary/20" : ""}>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{model.name}</CardTitle>
-          <Badge variant={model.status === "active" ? "default" : "secondary"}>
-            {model.status === "active" ? "Active" : "Inactive"}
-          </Badge>
-        </div>
-        <CardDescription>{model.type} Model</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <div className="flex items-center gap-1 mb-1">
-              <Database className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Data Source:</span>
-            </div>
-            {model.isSystem ? (
-              <div className="flex items-center gap-1 text-sm">
-                <Badge variant="outline" className="bg-primary/5">
-                  System Base Model
-                </Badge>
-                <Info
-                  className="h-4 w-4 text-muted-foreground cursor-help"
-                  title="This is a pre-trained system model"
-                />
-              </div>
-            ) : (
-              <span className="text-sm">{model.dataSource}</span>
-            )}
-          </div>
-
-          <div>
-            <div className="flex items-center gap-1 mb-1">
-              <Sliders className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Hyperparameters:</span>
-            </div>
-            <div className="grid grid-cols-1 gap-1">
-              {Object.entries(model.hyperparameters).map(([key, value]) => (
-                <div key={key} className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">{key}:</span>
-                  <span>{value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center text-sm">
-            <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-            <span className="text-muted-foreground">Last updated:</span>
-            <span className="ml-1 font-medium">{model.lastUpdated}</span>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" size="sm" asChild>
-          <Link href={model.isSystem ? "/documentation/models" : "/models/details"}>View Details</Link>
-        </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" size="icon" className="h-8 w-8 text-primary border-primary/20 hover:border-primary">
-            <Settings className="h-4 w-4" />
-          </Button>
-          {!model.isSystem && (
-            <Button variant="outline" size="icon" className="h-8 w-8 border-primary/20 hover:border-primary">
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-          <Button variant="outline" size="icon" className="h-8 w-8 border-primary/20 hover:border-primary">
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardFooter>
-    </Card>
   );
 }

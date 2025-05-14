@@ -26,9 +26,18 @@ export interface SuccessResponse {
 /**
  * Property Data Types
  */
-export type PropertyType = "Condominium" | "House" | "Townhouse" | "Land" | "Apartment" | "Other";
+export type PropertyType =
+  | "Condominium"
+  | "House"
+  | "Townhouse"
+  | "Land"
+  | "Apartment"
+  | "Other";
 export type OwnershipType = "Freehold" | "Leasehold";
-export type FurnishingStatus = "Unfurnished" | "Partly Furnished" | "Fully Furnished";
+export type FurnishingStatus =
+  | "Unfurnished"
+  | "Partly Furnished"
+  | "Fully Furnished";
 
 export interface PriceHistoryEntry {
   date: string; // Consider using Date object after parsing
@@ -134,8 +143,19 @@ export interface DataPipeline {
 /**
  * Model Types
  */
-export type ModelType = "Regression" | "Neural Network" | "Geospatial" | "Time Series" | "Ensemble" | "Classification";
-export type ModelStatus = "active" | "inactive" | "training" | "error" | "pending";
+export type ModelType =
+  | "Regression"
+  | "Neural Network"
+  | "Geospatial"
+  | "Time Series"
+  | "Ensemble"
+  | "Classification";
+export type ModelStatus =
+  | "active"
+  | "inactive"
+  | "training"
+  | "error"
+  | "pending";
 
 export interface Model {
   id: string;
